@@ -36,11 +36,11 @@ Edit `apps.js`. Each entry is one tile:
 Each tile shows **Online** or **Unreachable**. The dashboard can't check `http://`
 apps when it is served over `https://`, so those show **Not checked**.
 
-Current state: Kostkraft, Dispatch, Chucky, Bookends and Mise (Render) are live.
-Instasuite and Shifly still need a URL.
+Current state: every app is live. Mise and Shifly run on Render; the rest are on
+their own hosts.
 
-Mise is on Render's free plan, which sleeps when idle. Its tile shows **Waking up**
-for up to a minute while the first request wakes it.
+Mise and Shifly are on Render's free plan, which sleeps when idle. Their tiles show
+**Waking up** for up to a minute while the first request wakes them.
 
 ## Install it (mobile + desktop)
 

@@ -17,8 +17,8 @@
  */
 window.UNISIS_APPS = [
   { id: 'kostkraft',  name: 'Kostkraft',  desc: 'Recipe costing, yield & wastage', icon: 'factory',  accent: '#E0B020', url: 'https://kostkraft.bookends.co.in/' },
-  { id: 'instasuite', name: 'Instasuite', desc: '', icon: 'phone',    accent: '#E879B0', url: '' },
-  { id: 'shifly',     name: 'Shifly',     desc: '', icon: 'truck',    accent: '#5BB8EC', url: '' },
+  { id: 'instasuite', name: 'Instasuite', desc: '', icon: 'phone',    accent: '#E879B0', url: 'https://instasuite.in/' },
+  { id: 'shifly',     name: 'Shifly',     desc: '', icon: 'truck',    accent: '#5BB8EC', url: 'https://shiftly-bk.onrender.com/' },
   { id: 'mise',       name: 'Mise',       desc: 'Month-end stock counts across outlets', icon: 'pan', accent: '#A8D93A', url: 'https://scnhrk-capiche.onrender.com/' },
   { id: 'bookends',   name: 'Bookends',   desc: 'The live customer menu', icon: 'building', accent: '#E3A857', url: 'https://bookends.capichesecretmenu.workers.dev/' },
   { id: 'dispatch',   name: 'Dispatch',   desc: 'ODC management', icon: 'route',    accent: '#F2834A', url: 'https://dishpatch.mobioffice.io/' },
