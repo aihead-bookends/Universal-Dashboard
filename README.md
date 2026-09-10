@@ -37,8 +37,7 @@ Each tile shows **Online** or **Unreachable**. The dashboard can't check `http:/
 apps when it is served over `https://`, so those show **Not checked**.
 
 Current state: Kostkraft, Dispatch, Chucky, Bookends and Mise (Render) are live.
-KitchOps (`:3000`) points at the local machine. Instasuite and Shifly still need
-a URL.
+Instasuite and Shifly still need a URL.
 
 Mise is on Render's free plan, which sleeps when idle. Its tile shows **Waking up**
 for up to a minute while the first request wakes it.
@@ -72,6 +71,3 @@ It downloads its own JDK and Android SDK on first run.)
 It is plain static files, so any host works: Cloudflare Pages, Netlify, or next to
 Chucky by copying the folder into `chucky-krish/deploy/public/unisis/`. Serve
 `index.html`, `app.js`, `apps.js`, `sw.js`, `manifest.webmanifest` and `icons/`.
-
-For staff to reach KitchOps from anywhere, it needs its own HTTPS address (for example
-on Render, like Mise). Then replace its `{host}` URL in `apps.js`.

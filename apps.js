@@ -23,5 +23,4 @@ window.UNISIS_APPS = [
   { id: 'bookends',   name: 'Bookends',   desc: 'The live customer menu', icon: 'building', accent: '#E3A857', url: 'https://bookends.capichesecretmenu.workers.dev/' },
   { id: 'dispatch',   name: 'Dispatch',   desc: 'ODC management', icon: 'route',    accent: '#F2834A', url: 'https://dishpatch.mobioffice.io/' },
   { id: 'chucky',     name: 'Chucky',     desc: "Menu editor — Capiche, Aiko, Churn'd & Beshak", icon: 'cat', accent: '#FF4A3A', url: 'https://bookends-chucky.capichesecretmenu.workers.dev/chucky/' },
-  { id: 'kitchops',   name: 'KitchOps',   desc: 'Prep kitchen stations, recipes & yields', icon: 'hat', accent: '#3CC0AA', url: 'http://{host}:3000' },
 ];
