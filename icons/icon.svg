@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full-bleed background, artwork inside the central 80% circle, so the same
+       file is safe as a maskable icon (Android crops it to a circle/squircle). -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="28%" r="80%">
+      <stop offset="0" stop-color="#2B2418"/>
+      <stop offset="1" stop-color="#0E0D0B"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#glow)"/>
+  <rect x="156" y="156" width="88" height="88" rx="22" fill="#E0B020"/>
+  <rect x="275" y="163" width="74" height="74" rx="16" fill="none" stroke="#F4ECDD" stroke-width="14"/>
+  <rect x="163" y="275" width="74" height="74" rx="16" fill="none" stroke="#F4ECDD" stroke-width="14"/>
+  <rect x="268" y="268" width="88" height="88" rx="22" fill="#FF2A1A"/>
+</svg>
