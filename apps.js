@@ -6,7 +6,7 @@
  *   id      stable key, lowercase, unique
  *   name    tile title
  *   desc    one short line under the title ('' is fine)
- *   icon    factory | phone | truck | pan | building | route | hat | cat | grid
+ *   icon    factory | phone | truck | pan | building | route | hat | receipt | cat | grid
  *   accent  tile colour (hex); keep it bright, the tiles sit on near-black
  *   url     where OPEN goes. Either a full address, or a template where {host}
  *           is replaced by the machine the dashboard was opened from — so
@@ -23,4 +23,5 @@ window.UNISIS_APPS = [
   { id: 'bookends',   name: 'Bookends',   desc: 'The live customer menu', icon: 'building', accent: '#E3A857', url: 'https://bookends.capichesecretmenu.workers.dev/' },
   { id: 'dispatch',   name: 'Dispatch',   desc: 'ODC management', icon: 'route',    accent: '#F2834A', url: 'https://dishpatch.mobioffice.io/' },
   { id: 'chucky',     name: 'Chucky',     desc: "Menu editor — Capiche, Aiko, Churn'd & Beshak", icon: 'cat', accent: '#FF4A3A', url: 'https://bookends-chucky.capichesecretmenu.workers.dev/chucky/' },
+  { id: 'ordergenie', name: 'OrderGenie', desc: 'Restaurant operations & analytics', icon: 'receipt', accent: '#9B8CFF', url: 'https://ordergenie.bookends.co.in/' },
 ];

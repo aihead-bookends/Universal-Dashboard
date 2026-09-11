@@ -29,7 +29,7 @@ Edit `apps.js`. Each entry is one tile:
 | Field | Meaning |
 |---|---|
 | `name`, `desc` | Title and one-line description |
-| `icon` | `factory` `phone` `truck` `pan` `building` `route` `hat` `cat` `grid` |
+| `icon` | `factory` `phone` `truck` `pan` `building` `route` `hat` `receipt` `cat` `grid` |
 | `accent` | Tile colour (hex) |
 | `url` | Full address, or `http://{host}:PORT` for an app on the same machine. Leave `''` and the tile shows **Not connected** |
 

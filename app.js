@@ -14,6 +14,7 @@
     building: '<rect x="4.5" y="3" width="15" height="18" rx="1.5"/><path d="M10 21v-3.5h4V21"/><path d="M8.5 7.5h1.5M14 7.5h1.5M8.5 11.5h1.5M14 11.5h1.5"/>',
     route:    '<circle cx="6" cy="18.5" r="2.5"/><circle cx="18" cy="5.5" r="2.5"/><path d="M8.5 18.5H15a3.25 3.25 0 0 0 0-6.5H9a3.25 3.25 0 0 1 0-6.5h6.5"/>',
     hat:      '<path d="M6.5 14a4 4 0 0 1 .6-7.9 5 5 0 0 1 9.8 0A4 4 0 0 1 17.5 14v6h-11z"/><path d="M6.5 17h11"/>',
+    receipt:  '<path d="M5.5 2.5h13v19l-2.2-1.5-2.1 1.5-2.2-1.5-2.2 1.5-2.1-1.5-2.2 1.5z"/><path d="M9 7.5h6M9 11.5h6M9 15.5h3.5"/>',
     grid:     '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
   };
   // Chucky's head from the Bookends landing, in its own coordinate space.
