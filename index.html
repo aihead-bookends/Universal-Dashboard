@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -5,7 +6,7 @@
 <!-- viewport-fit=cover paints under the notch; the safe-area insets below pad around it. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#0E0D0B">
+<meta name="theme-color" content="#000000">
 <meta name="description" content="One place to open every Bookends app.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,172 +20,202 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* Same palette and type as the Bookends landing and the Chucky hub. */
+/* Deep space: black, a 3D galaxy that follows scroll (galaxy.js), Lora + DM Mono. */
 :root{
-  --ink:#0E0D0B;--card:#18150F;--card-hi:#211D16;
-  --cream:#F4ECDD;--cream-dim:#CFC6B4;--muted:#8F8676;--faint:#4A443A;
-  --line:rgba(244,236,221,.10);--line2:rgba(244,236,221,.18);
-  --gold:#E0B020;--red:#FF2A1A;--ok:#7BD88F;--warn:#E8A33D;
+  --text:#F3F1EC;--dim:rgba(243,241,236,.68);--muted:rgba(243,241,236,.46);--faint:rgba(243,241,236,.24);
+  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);
+  --gold:#E8B94A;--ok:#7BD88F;--warn:#E8A33D;
   --serif:'Lora',Georgia,'Times New Roman',serif;
   --mono:'DM Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
   --safe-t:env(safe-area-inset-top,0px);--safe-r:env(safe-area-inset-right,0px);
   --safe-b:env(safe-area-inset-bottom,0px);--safe-l:env(safe-area-inset-left,0px);
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html{background:var(--ink)}
+html{background:#000;scroll-behavior:smooth}
 body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;
-  background:var(--ink);color:var(--cream);font-family:var(--serif);-webkit-font-smoothing:antialiased}
-.mono{font-family:var(--mono)}
+  background:#000;color:var(--text);font-family:var(--serif);-webkit-font-smoothing:antialiased}
 
-/* ambient */
-.field{position:fixed;inset:0;z-index:0;pointer-events:none;background:
-  radial-gradient(60% 45% at 50% -5%,rgba(224,176,32,.10),transparent 70%),
-  radial-gradient(45% 40% at 100% 100%,rgba(255,42,26,.06),transparent 70%),
-  radial-gradient(35% 35% at 0% 85%,rgba(224,176,32,.04),transparent 70%)}
-.grain{position:fixed;inset:0;z-index:1;opacity:.04;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* space: the WebGL canvas covers this; the gradient only shows without WebGL */
+.space{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(45% 40% at 72% 32%,rgba(232,185,74,.12),transparent 70%),
+    radial-gradient(60% 55% at 30% 80%,rgba(110,120,255,.10),transparent 70%),#000}
+.space canvas{display:block;width:100%;height:100%}
+/* edges fall off to black, and the field dims a little as you scroll into the apps */
+.veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(130% 95% at 50% 45%,transparent 55%,rgba(0,0,0,.45) 100%)}
+.veil::after{content:"";position:absolute;inset:0;background:#000;opacity:calc(var(--sp,0) * .18)}
 
-/* top bar */
-.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:calc(10px + var(--safe-t)) calc(18px + var(--safe-r)) 10px calc(18px + var(--safe-l));
-  background:rgba(14,13,11,.78);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
-  font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.brand{display:flex;align-items:center;gap:10px;color:var(--cream-dim);white-space:nowrap}
-.brand img{border-radius:6px;display:block}
-.brand .dim{color:var(--muted)}
-.bar-rt{display:flex;align-items:center;gap:14px}
-.install{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid rgba(224,176,32,.45);background:rgba(224,176,32,.10);
-  color:var(--gold);font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
-.install:hover{background:rgba(224,176,32,.18)}
-.install:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+/* install: beside the search; app.js shows it only when the browser can install the page */
+.install{flex:none;min-height:54px;padding:0 22px;border-radius:999px;border:1px solid var(--line2);background:rgba(255,255,255,.04);
+  color:var(--text);font:500 10.5px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;cursor:pointer;
+  transition:background-color .4s var(--ease),border-color .4s var(--ease)}
+.install:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.32)}
+.install:focus-visible{outline:1px solid var(--text);outline-offset:3px}
 
 /* page */
-.wrap{position:relative;z-index:2;flex:1;width:min(1100px,100%);margin:0 auto;
-  padding:clamp(28px,6vh,64px) calc(20px + var(--safe-r)) 36px calc(20px + var(--safe-l))}
-.eyebrow{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
-.title{margin:12px 0 0;font-size:clamp(34px,6vw,60px);font-weight:600;line-height:1.02;letter-spacing:-.012em}
-.title em{color:var(--gold)}
+.wrap{position:relative;z-index:2;flex:1;width:min(920px,100%);margin:0 auto;
+  padding:0 calc(22px + var(--safe-r)) 24px calc(22px + var(--safe-l))}
 
-.tools{margin-top:clamp(22px,4vh,34px);display:flex;align-items:center;gap:14px}
-.search{position:relative;flex:1;max-width:440px;display:flex;align-items:center;height:48px;padding:0 12px 0 42px;
-  border:1px solid var(--line2);border-radius:12px;background:rgba(244,236,221,.03);transition:border-color .2s}
-.search:focus-within{border-color:rgba(224,176,32,.55)}
-.search svg{position:absolute;left:14px;width:18px;height:18px;color:var(--muted)}
+/* hero: nearly a full screen, so the galaxy has room before the apps */
+.hero{min-height:92svh;display:flex;flex-direction:column;justify-content:flex-end;padding:calc(48px + var(--safe-t)) 0 clamp(36px,8vh,88px)}
+.eyebrow{margin:0;font:400 11px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+.eyebrow span{white-space:nowrap}
+.title{margin:18px 0 0;font-size:clamp(44px,8.4vw,96px);font-weight:600;line-height:.98;letter-spacing:-.02em}
+.title em{padding-right:.06em;color:var(--gold);
+  background:linear-gradient(100deg,#F7DE9A 0%,#E8B94A 45%,#F3F1EC 115%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.lede{margin:18px 0 0;font-size:clamp(16px,1.7vw,19px);line-height:1.5;font-style:italic;color:var(--dim)}
+
+.tools{margin-top:clamp(28px,5vh,44px);display:flex;align-items:center;gap:18px}
+.search{position:relative;flex:1;max-width:460px;display:flex;align-items:center;height:54px;padding:0 12px 0 48px;
+  border:1px solid var(--line2);border-radius:999px;background:rgba(10,10,14,.5);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  transition:border-color .5s var(--ease),background-color .5s var(--ease),box-shadow .5s var(--ease)}
+.search:focus-within{border-color:rgba(255,255,255,.38);background-color:rgba(14,14,20,.72);
+  box-shadow:0 0 0 6px rgba(255,255,255,.04),0 20px 60px -20px rgba(232,185,74,.3)}
+.search svg{position:absolute;left:19px;width:18px;height:18px;color:var(--muted)}
 /* 16px: anything smaller makes iOS Safari zoom the page on focus. */
-.search input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;color:var(--cream);font:16px var(--serif)}
+.search input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;color:var(--text);font:16px var(--serif)}
 .search input::placeholder{color:var(--muted);font-style:italic}
 .search input::-webkit-search-cancel-button{-webkit-appearance:none}
-.search kbd{font:11px var(--mono);color:var(--muted);border:1px solid var(--line2);border-radius:5px;padding:2px 7px}
-.count{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.search kbd{font:11px var(--mono);color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:3px 10px}
+.count{font:400 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
 
-.notice{margin:16px 0 0;padding:10px 14px;border:1px solid rgba(232,163,61,.35);border-radius:10px;background:rgba(232,163,61,.08);
-  color:var(--warn);font:12.5px/1.4 var(--mono)}
+.cue{margin-top:clamp(32px,6vh,60px);align-self:flex-start;display:inline-flex;align-items:center;gap:14px;
+  color:var(--muted);text-decoration:none;font:400 10.5px var(--mono);letter-spacing:.26em;text-transform:uppercase;transition:color .4s var(--ease)}
+.cue i{position:relative;width:1px;height:38px;background:var(--line2);overflow:hidden}
+.cue i::after{content:"";position:absolute;left:0;top:-40%;width:1px;height:40%;background:var(--text);animation:fall 2.4s var(--ease) infinite}
+@keyframes fall{to{top:100%}}
+.cue:hover{color:var(--text)}
 
-/* tiles */
-.grid{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:16px}
-.tile{--ac:var(--gold);position:relative;display:flex;flex-direction:column;min-height:188px;padding:18px 18px 14px;
-  border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--card-hi),var(--card));
-  color:var(--cream);text-decoration:none;overflow:hidden;-webkit-tap-highlight-color:transparent;
-  transition:transform .28s cubic-bezier(.2,.7,.2,1),border-color .28s,box-shadow .28s;
-  animation:rise .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 45ms)}
-@keyframes rise{from{opacity:0;transform:translateY(12px)}}
-.tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ac);transform:scaleY(0);transform-origin:top;transition:transform .35s}
-.tile::after{content:"";position:absolute;inset:0;pointer-events:none;transform:translateX(-130%);
-  background:linear-gradient(105deg,transparent 42%,rgba(244,236,221,.07) 50%,transparent 58%)}
-a.tile:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--ac) 55%,transparent);
-  box-shadow:0 22px 50px -28px color-mix(in srgb,var(--ac) 75%,transparent)}
-a.tile:hover::before,a.tile:focus-visible::before{transform:scaleY(1)}
-a.tile:hover::after{animation:sheen .9s ease}
-@keyframes sheen{to{transform:translateX(130%)}}
-a.tile:active{transform:translateY(-1px) scale(.985)}
-a.tile:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+.notice{margin:0 0 18px;padding:12px 18px;border:1px solid rgba(232,163,61,.3);border-radius:14px;background:rgba(232,163,61,.08);
+  color:var(--warn);font:12.5px/1.45 var(--mono)}
 
-.ico{width:50px;height:50px;flex:none;border-radius:14px;display:grid;place-items:center;color:var(--ac);
-  background:color-mix(in srgb,var(--ac) 12%,transparent);border:1px solid color-mix(in srgb,var(--ac) 35%,transparent)}
-.ico svg{width:27px;height:27px}
-.name{margin:16px 0 0;font-size:clamp(20px,2.3vw,24px);font-weight:600;line-height:1.05}
-.desc{margin:6px 0 12px;font-size:13.5px;line-height:1.45;font-style:italic;color:var(--cream-dim);
-  display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.meta{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px;
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.status{display:inline-flex;align-items:center;gap:7px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.section{margin:0;display:flex;align-items:center;gap:16px;scroll-margin-top:32px;
+  font:400 10.5px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+.section::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
+
+/* apps: separate logos zig-zagging down the page. Details unfold beside a logo
+   on hover, on keyboard focus, or when scrolling brings it to the middle (app.js sets .on). */
+.list{counter-reset:app;display:flex;flex-direction:column;gap:clamp(24px,5vh,48px);padding:36px 0 30vh}
+.tile{--ac:var(--gold);--o:0%;counter-increment:app;position:relative;display:flex;align-items:center;gap:40px;
+  padding:0 calc(4% + var(--o));color:var(--text);text-decoration:none;outline:none;
+  pointer-events:none;-webkit-tap-highlight-color:transparent;transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.tile.flip{flex-direction:row-reverse;text-align:right}
+/* galaxy.js adds .reveal; logos then rise in as they scroll into view */
+.reveal .tile:not(.in){opacity:0;transform:translateY(40px)}
+
+/* logos: a thin line icon in a hairline circle; the app's colour shows only while it is open */
+.ico{position:relative;flex:none;width:72px;height:72px;border-radius:50%;display:grid;place-items:center;pointer-events:auto;
+  color:rgba(243,241,236,.82);background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);
+  animation:float 9s ease-in-out infinite;animation-delay:calc(var(--i,0) * -1.1s);
+  transition:color .5s var(--ease),border-color .5s var(--ease),transform .7s var(--ease)}
+.ico svg{width:28px;height:28px}
+@keyframes float{50%{translate:0 -4px}}
+/* one thin ring eases out around a logo while it is open */
+.ico::before{content:"";position:absolute;inset:-8px;border-radius:50%;border:1px solid color-mix(in srgb,var(--ac) 45%,transparent);
+  pointer-events:none;opacity:0;scale:.9;transition:opacity .6s var(--ease),scale .8s var(--ease)}
+.tile.on .ico,.tile:focus-visible .ico{color:var(--ac);border-color:color-mix(in srgb,var(--ac) 60%,transparent);transform:scale(1.04)}
+.tile.on .ico::before,.tile:focus-visible .ico::before{opacity:1;scale:1}
+
+/* no box: just the text over the galaxy, with a soft dark halo so it stays readable on bright stars */
+.info{position:relative;min-width:0;max-width:390px;padding:6px 4px;
+  text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 12px rgba(0,0,0,.9),0 0 28px rgba(0,0,0,.8);
+  /* the wipe's clip reaches 30px past the text, so glyphs and their halo are never cut */
+  opacity:0;clip-path:inset(-30px 100% -30px -30px);translate:-14px 0;pointer-events:none;
+  transition:opacity .4s var(--ease),clip-path .75s var(--ease),translate .75s var(--ease)}
+.tile.flip .info{clip-path:inset(-30px -30px -30px 100%);translate:14px 0}
+.tile.on .info,.tile:focus-visible .info{opacity:1;clip-path:inset(-30px);translate:0 0;pointer-events:auto}
+.info::before{content:counter(app,decimal-leading-zero);display:block;margin-bottom:6px;font:400 10.5px var(--mono);letter-spacing:.22em;color:var(--ac)}
+.info > *{opacity:0;translate:0 8px;transition:opacity .5s var(--ease),translate .6s var(--ease)}
+.tile.on .info > *,.tile:focus-visible .info > *{opacity:1;translate:0 0}
+.tile.on .info > :nth-child(2),.tile:focus-visible .info > :nth-child(2){transition-delay:.06s}
+.tile.on .info > :nth-child(3),.tile:focus-visible .info > :nth-child(3){transition-delay:.12s}
+
+.name{margin:0;font-size:clamp(22px,2.6vw,28px);font-weight:600;line-height:1.1;letter-spacing:-.01em}
+.desc{margin:5px 0 0;font-size:14.5px;line-height:1.45;font-style:italic;color:rgba(243,241,236,.82)}
+.meta{margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:space-between;gap:18px;
+  font:400 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.tile.flip .meta{flex-direction:row-reverse}
+.status{display:inline-flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.label{overflow:hidden;text-overflow:ellipsis}
 .dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--faint)}
-.status[data-s="online"] .dot{background:var(--ok);box-shadow:0 0 8px rgba(123,216,143,.55)}
+.status[data-s="online"] .dot{background:var(--ok);box-shadow:0 0 10px rgba(123,216,143,.6)}
 .status[data-s="down"] .dot{background:var(--warn)}
-.status[data-s="checking"] .dot{background:var(--muted);animation:pulse 1.1s ease-in-out infinite}
-@keyframes pulse{50%{opacity:.25}}
-.go{flex:none;color:var(--ac);letter-spacing:.14em}
+.status[data-s="checking"] .dot{background:var(--text);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.2}}
+.go{flex:none;color:var(--ac);letter-spacing:.16em}
 
 /* no address yet: visibly a slot, not a broken link */
-.tile.off{border-style:dashed;border-color:var(--line2);background:rgba(244,236,221,.015);cursor:default}
-.tile.off .ico{color:var(--muted);background:rgba(244,236,221,.04);border-color:var(--line2)}
-.tile.off .name{color:var(--cream-dim)}
+.tile.off .ico{color:var(--muted);border-style:dashed;border-color:var(--line2)}
+.tile.off .info::before{color:var(--muted)}
 
-.empty{margin:36px 0 0;text-align:center;font-style:italic;color:var(--muted)}
+.empty{margin:28px 0 0;text-align:center;font-style:italic;color:var(--muted)}
 
-.foot{position:relative;z-index:2;padding:18px calc(18px + var(--safe-r)) calc(18px + var(--safe-b)) calc(18px + var(--safe-l));
-  text-align:center;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.foot{position:relative;z-index:2;padding:22px calc(18px + var(--safe-r)) calc(22px + var(--safe-b)) calc(18px + var(--safe-l));
+  text-align:center;font:400 10.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
 
 /* iOS has no install prompt; this sheet explains Add to Home Screen */
 .sheet{position:fixed;left:12px;right:12px;bottom:calc(12px + var(--safe-b));z-index:10;margin:0 auto;max-width:420px;
-  padding:18px 18px 14px;border:1px solid var(--line2);border-radius:16px;background:#1C1914;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.sheet h2{margin:0;font-size:19px}
-.sheet p{margin:8px 0 0;color:var(--cream-dim);font-size:14px;line-height:1.5}
-.sheet button{margin-top:14px;width:100%;min-height:44px;border:0;border-radius:10px;background:var(--cream);color:var(--ink);
-  font:500 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+  padding:20px 20px 16px;border:1px solid var(--line2);border-radius:22px;background:rgba(12,12,16,.9);
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 24px 70px rgba(0,0,0,.7)}
+.sheet h2{margin:0;font-size:19px;font-weight:600}
+.sheet p{margin:8px 0 0;color:var(--dim);font-size:14px;line-height:1.55}
+.sheet button{margin-top:16px;width:100%;min-height:46px;border:0;border-radius:999px;background:var(--text);color:#000;
+  font:500 11.5px var(--mono);letter-spacing:.18em;text-transform:uppercase;cursor:pointer}
 
-/* phones: two columns, tighter tiles */
-@media (max-width:560px){
+/* phones: logos hug the edges, details take the rest of the line */
+@media (max-width:640px){
+  .hero{min-height:88svh}
   .tools{flex-wrap:wrap}
   .search{max-width:none;flex-basis:100%}
   .search kbd,.count{display:none}
-  .grid{grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
-  .tile{min-height:170px;padding:14px 14px 12px;border-radius:14px}
-  .ico{width:42px;height:42px;border-radius:12px}
+  .list{gap:30px}
+  .tile{padding:0 4px;gap:28px}
+  .ico{width:58px;height:58px}
   .ico svg{width:23px;height:23px}
-  .name{margin-top:13px;font-size:19px}
-  .desc{font-size:12.5px}
-  .meta::before{left:14px;right:14px}
-  .clock{display:none}
-  .go-t{display:none}
+  .info{flex:1;max-width:none;padding:4px 2px}
+  .name{font-size:21px}
+  .desc{font-size:13.5px}
+  .meta{gap:10px;font-size:9.5px}
 }
-@media (max-width:380px){ .brand .dim,.brand .sep{display:none} }
-.eyebrow span{white-space:nowrap}
-@media (pointer:coarse){ .install{min-height:44px} .search kbd{display:none} }
+@media (pointer:coarse){ .search kbd{display:none} }
 @media (prefers-reduced-motion:reduce){
-  .tile,.status[data-s="checking"] .dot{animation:none}
-  a.tile:hover::after{animation:none}
-  .tile{transition:border-color .2s}
-  a.tile:hover,a.tile:active{transform:none}
+  html{scroll-behavior:auto}
+  .cue i::after,.status[data-s="checking"] .dot,.ico{animation:none}
+  .tile,.ico,.info,.info > *{transition:opacity .2s}
+  .tile.on .ico{transform:none}
 }
 </style>
 </head>
 <body>
-<div class="field" aria-hidden="true"></div>
-<div class="grain" aria-hidden="true"></div>
-
-<header class="bar">
-  <span class="brand"><img src="icons/icon.svg" alt="" width="22" height="22">Bookends <span class="sep">·</span> <span class="dim">UNISIS</span></span>
-  <span class="bar-rt">
-    <span class="clock" id="clock"></span>
-    <button class="install" id="install" type="button" hidden>Install app</button>
-  </span>
-</header>
+<div class="space" aria-hidden="true"><canvas id="galaxy"></canvas></div>
+<div class="veil" aria-hidden="true"></div>
 
 <main class="wrap">
-  <p class="eyebrow" id="greet">Welcome back</p>
-  <h1 class="title">Select an <em>application</em></h1>
+  <section class="hero">
+    <p class="eyebrow" id="greet">Welcome back</p>
+    <h1 class="title">Explore Bookends <em>UNISIS</em></h1>
+    <p class="lede">Every Bookends app, one universe.</p>
 
-  <div class="tools">
-    <label class="search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
-      <input id="q" type="search" placeholder="Search apps" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Search apps">
-      <kbd>/</kbd>
-    </label>
-    <span class="count" id="count"></span>
-  </div>
+    <div class="tools">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+        <input id="q" type="search" placeholder="Search apps" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Search apps">
+        <kbd>/</kbd>
+      </label>
+      <span class="count" id="count"></span>
+      <button class="install" id="install" type="button" hidden>Install app</button>
+    </div>
+
+    <a class="cue" href="#apps"><i></i>Scroll to explore</a>
+  </section>
 
   <p class="notice" id="offline" hidden>You're offline — apps need a connection to open.</p>
-  <div class="grid" id="grid"></div>
+  <h2 class="section" id="apps">Applications</h2>
+  <div class="list" id="grid"></div>
   <p class="empty" id="empty" hidden></p>
 </main>
 
@@ -198,5 +229,6 @@ a.tile:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
 
 <script src="apps.js"></script>
 <script src="app.js"></script>
+<script src="galaxy.js"></script>
 </body>
 </html>

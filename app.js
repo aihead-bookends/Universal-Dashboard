@@ -18,12 +18,12 @@
     grid:     '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
   };
   // Chucky's head from the Bookends landing, in its own coordinate space.
-  const CAT = '<svg viewBox="56 22 108 108" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+  const CAT = '<svg viewBox="56 22 108 108" fill="none" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
     + '<path d="M74 70 L68 30 L94 54 C102 50 118 50 126 56 L152 32 L146 74 C156 96 150 120 110 121 C72 121 64 94 74 70 Z"/>'
     + '<rect x="74" y="64" width="30" height="18" fill="currentColor" stroke="none"/><rect x="112" y="62" width="26" height="15" fill="currentColor" stroke="none"/></svg>';
 
   const iconSvg = (name) => name === 'cat' ? CAT
-    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
       + (ICONS[name] || ICONS.grid) + '</svg>';
 
   // {host} = the machine this page was opened from (empty on file://).
@@ -48,10 +48,13 @@
     tile.style.setProperty('--i', i);
     if (/^#[0-9a-f]{3,8}$/i.test(app.accent || '')) tile.style.setProperty('--ac', app.accent);
 
+    // Closed, a tile is just its logo; .info (name, description, status) unfolds beside it.
     const ico = make('span', 'ico');
     ico.innerHTML = iconSvg(app.icon);
-    tile.append(ico, make('h2', 'name', app.name));
-    if (app.desc) tile.append(make('p', 'desc', app.desc));
+    const info = make('div', 'info');
+    info.append(make('h2', 'name', app.name));
+    if (app.desc) info.append(make('p', 'desc', app.desc));
+    tile.append(ico, info);
 
     const meta = make('div', 'meta');
     const status = make('span', 'status');
@@ -71,7 +74,7 @@
       tile.setAttribute('aria-disabled', 'true');
       setStatus(status, 'off', 'Not connected');
     }
-    tile.append(meta);
+    info.append(meta);
     grid.append(tile);
     return { app, href, tile, status, haystack: `${app.name} ${app.desc || ''}`.toLowerCase() };
   });
@@ -117,6 +120,54 @@
     }
   }
 
+  /* -------------------------------------------------- details on demand */
+  // One app shows its details at a time: the one under the mouse, or the one a
+  // scroll brings to the middle of the screen. Moving the mouse off folds it
+  // back to its logo. Keyboard focus opens a tile through CSS.
+  let active = null;
+  let leaveTimer = 0;
+  function setActive(tile) {
+    if (tile === active) return;
+    active?.classList.remove('on');
+    active = tile;
+    active?.classList.add('on');
+  }
+  tiles.forEach(({ tile }) => {
+    tile.addEventListener('pointerenter', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      clearTimeout(leaveTimer);
+      setActive(tile);
+    });
+    // A short grace period lets the mouse cross the gap from logo to details.
+    tile.addEventListener('pointerleave', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      leaveTimer = setTimeout(() => { if (active === tile) setActive(null); }, 160);
+    });
+  });
+
+  let scrollQueued = false;
+  function focusMiddle() {
+    scrollQueued = false;
+    const mid = innerHeight / 2;
+    let best = null;
+    let bestGap = innerHeight * 0.18;
+    tiles.forEach(({ tile }) => {
+      if (tile.hidden) return;
+      const r = tile.firstChild.getBoundingClientRect();
+      const gap = Math.abs(r.top + r.height / 2 - mid);
+      if (gap < bestGap) {
+        best = tile;
+        bestGap = gap;
+      }
+    });
+    setActive(best);
+  }
+  addEventListener('scroll', () => {
+    if (scrollQueued) return;
+    scrollQueued = true;
+    requestAnimationFrame(focusMiddle);
+  }, { passive: true });
+
   /* ------------------------------------------------------------ search */
   const q = $('#q');
   const count = $('#count');
@@ -129,8 +180,13 @@
     tiles.forEach((t) => {
       const hit = !term || t.haystack.includes(term);
       t.tile.hidden = !hit;
-      if (hit) shown++;
+      if (!hit) return;
+      // Visible logos zig-zag down the page, each a little further in or out.
+      t.tile.classList.toggle('flip', shown % 2 === 1);
+      t.tile.style.setProperty('--o', `${[0, 10, 4, 14][shown % 4]}%`);
+      shown++;
     });
+    if (active?.hidden) setActive(null);
     const live = tiles.filter((t) => t.href).length;
     count.textContent = term ? `${shown} of ${total} apps` : `${live} of ${total} connected`;
     empty.hidden = shown > 0;
@@ -156,7 +212,7 @@
   });
   applySearch();
 
-  /* ----------------------------------------------------- greeting/clock */
+  /* ---------------------------------------------------------- greeting */
   function tick() {
     const now = new Date();
     const h = now.getHours();
@@ -164,7 +220,6 @@
     const day = now.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
     // Each phrase is its own nowrap span, so a narrow screen breaks between phrases, not inside a date.
     $('#greet').replaceChildren(...['Welcome back', hello, day].flatMap((text, i) => [i ? ' · ' : '', make('span', '', text)]));
-    $('#clock').textContent = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   }
   tick();
   setInterval(tick, 30_000);

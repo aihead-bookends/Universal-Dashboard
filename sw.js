@@ -6,9 +6,9 @@
  *
  * Bump VERSION whenever SHELL changes.
  */
-const VERSION = 'unisis-v1';
+const VERSION = 'unisis-v3';
 const SHELL = [
-  './', 'index.html', 'app.js', 'apps.js', 'manifest.webmanifest',
+  './', 'index.html', 'app.js', 'apps.js', 'galaxy.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
 const FONT_HOSTS = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);

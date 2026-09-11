@@ -39,7 +39,7 @@ const svgUrl = 'file:///' + SVG.replace(/\\/g, '/');
 for (const size of SIZES) {
   const page = path.join(tmp, `icon-${size}.html`);
   const out = path.join(ICONS, `icon-${size}.png`);
-  fs.writeFileSync(page, `<html><body style="margin:0;background:#0E0D0B"><img src="${svgUrl}" width="${size}" height="${size}" style="display:block"></body></html>`);
+  fs.writeFileSync(page, `<html><body style="margin:0;background:#000000"><img src="${svgUrl}" width="${size}" height="${size}" style="display:block"></body></html>`);
 
   spawnSync(exe, [
     '--headless=new', '--disable-gpu', '--hide-scrollbars', '--no-first-run',
