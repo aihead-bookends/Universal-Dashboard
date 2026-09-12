@@ -7,7 +7,7 @@
  *   name    the app's name
  *   tag     two or three words on what it is, shown above the description
  *   desc    the system line: what the app runs, in one sentence
- *   icon    cube | lens | rotate | tally | bookends | send | cat | chart | grid
+ *   icon    cube | lens | rotate | tally | lock | send | cat | chart | grid
  *   accent  logo colour (hex); keep it bright, the logos sit on the galaxy
  *   url     where OPEN goes. Either a full address, or a template where {host}
  *           is replaced by the machine the dashboard was opened from — so
@@ -29,9 +29,9 @@ window.UNISIS_APPS = [
   { id: 'mise',       name: 'Mise',       tag: 'Kitchen intelligence',
     desc: 'Kitchen Management System — handles recipes, inventory, invoices, food costing and kitchen back-office operations.',
     icon: 'tally',      accent: '#A8D93A', url: 'https://scnhrk-capiche.onrender.com/' },
-  { id: 'bookends',   name: 'Bookends',   tag: 'Corporate hub',
-    desc: 'Bookends Hospitality Command Center — central corporate information, business systems and company-level access.',
-    icon: 'bookends', accent: '#E3A857', url: 'https://bookends.capichesecretmenu.workers.dev/' },
+  { id: 'secretmenu', name: 'Secret Menu', tag: 'Capiche classified',
+    desc: "Classified Menu Access — tonight's word unlocks the Capiche secret menu; the word is given out by phone only and expires each night.",
+    icon: 'lock',      accent: '#E5243B', url: 'https://bookends.capichesecretmenu.workers.dev/' },
   { id: 'dispatch',   name: 'Dispatch',   tag: 'Delivery & dispatch',
     desc: 'Dispatch Control System — manages delivery, dispatch coordination, order movement and operational tracking.',
     icon: 'send',    accent: '#F2834A', url: 'https://dishpatch.mobioffice.io/' },

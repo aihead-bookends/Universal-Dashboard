@@ -108,7 +108,7 @@ void main() {
   vSoft = soft;
   // Sub-pixel points dim instead of shrinking; anything brushing the camera fades out,
   // nebulae from further away so they never swell into blobs.
-  vCol = vec4(aCol.rgb, alpha * min(px, 1.0) * smoothstep(0.3, 1.5, d) * mix(1.0, smoothstep(1.5, 4.0, d), soft));
+  vCol = vec4(aCol.rgb, alpha * min(px * 1.3, 1.0) * smoothstep(0.3, 1.5, d) * mix(1.0, smoothstep(1.5, 4.0, d), soft));
   gl_PointSize = clamp(px, 1.0, soft > 0.5 ? uMax : uStarMax);
   gl_Position = uProj * mv;
   gl_Position.xy += uShift * gl_Position.w;
@@ -116,9 +116,10 @@ void main() {
 #ifdef FLOW
   // Flow: star points ride the pointer's carry field like specks in water, each by its own amount.
   // The field is blended between grid cells, so neighbouring stars move together smoothly.
-  // Glow, nebulae and dust stay put. Nothing is stored per star: as the field eases back to zero
-  // every star returns to exactly where its orbit puts it.
-  if (uFlow > 0.0 && gl_Position.w > 0.0 && kind < 2.5) {
+  // The core glow, nebulae and dust ride it too, at a lower weight: they are broad and soft, so they
+  // drift with the stroke rather than snapping to it. Nothing is stored per point: as the field eases
+  // back to zero every one of them returns to exactly where its orbit puts it.
+  if (uFlow > 0.0 && gl_Position.w > 0.0) {
     vec2 ndc = gl_Position.xy / gl_Position.w;
     vec2 uv = ndc * 0.5 + 0.5;
 #ifdef FLOW_FLOAT
@@ -136,7 +137,7 @@ void main() {
     vec2 carry = (texture2D(uFlowTex, uv).rg * 255.0 - 128.0) / 127.0 * CARRY;
 #endif
     float seed = fract(sin(aOrbit.y * 12.9898 + aOrbit.x * 78.233) * 43758.5453);
-    carry *= kind > 1.5 ? 0.35 : 0.75 + 0.5 * seed;
+    carry *= kind < 1.5 ? 0.75 + 0.5 * seed : (kind < 2.5 ? 0.3 : 0.55); // stars, distant stars, then glow and dust
     gl_Position.xy = (ndc + vec2(carry.x / uAspect, carry.y)) * gl_Position.w;
   }
 #endif
@@ -150,8 +151,8 @@ void main() {
   float d = length(gl_PointCoord - 0.5) * 2.0;
   if (d > 1.0) discard;
   // Stars get a tight gaussian core, a clean point of light; nebulae and dust a soft falloff.
-  float a = mix(exp(-d * d * 6.0), (1.0 - d) * (1.0 - d), vSoft) * vCol.a;
-  gl_FragColor = uDust > 0.5 ? vec4(0.0, 0.0, 0.0, a) : vec4(vCol.rgb * a, 1.0);
+  float a = mix(exp(-d * d * 11.0), (1.0 - d) * (1.0 - d), vSoft) * vCol.a;
+  gl_FragColor = uDust > 0.5 ? vec4(0.0, 0.0, 0.0, a) : vec4(vCol.rgb * a * 1.35, 1.0);
 }`;
 
   // Stars ride the pointer's flow field only where the GPU can read textures in the vertex shader.
@@ -251,7 +252,7 @@ void main() {
     // Soft light pooled over the core, and a small hot nucleus.
     const nucleus = i < 12;
     add(Math.abs(gauss()) * (nucleus ? 0.06 : 0.5), rand() * Math.PI * 2, gauss() * (nucleus ? 0.03 : 0.1), 0,
-      nucleus ? [1, 0.93, 0.8] : [1, 0.8, 0.55], nucleus ? 0.22 : 0.06, nucleus ? 12 + rand() * 12 : 40 + rand() * 60, 3);
+      nucleus ? [1, 0.93, 0.8] : [1, 0.8, 0.55], nucleus ? 0.3 : 0.09, nucleus ? 12 + rand() * 12 : 40 + rand() * 60, 3);
   }
   for (let i = 0; i < N.dust; i++) {
     // Dust lanes hug the inner edge of each arm.
@@ -280,9 +281,9 @@ void main() {
   // in clip-space heights (row 0 at the bottom). Each frame it is painted along the pointer's smoothed
   // path, eased back toward zero and softly blurred, then uploaded as a texture that the vertex shader
   // samples with linear filtering, so the carry is continuous in both space and time.
-  const GW = 96;
-  const GH = 54;
-  const SIGMA = 0.11; // brush radius, in clip-space heights
+  const GW = 160;
+  const GH = 90;
+  const SIGMA = 0.075; // brush radius, in clip-space heights
   const CARRY = 0.2; // largest carry; matches the shader
   const fieldX = new Float32Array(GW * GH);
   const fieldY = new Float32Array(GW * GH);
@@ -370,7 +371,7 @@ void main() {
     const aspect = innerWidth / innerHeight;
     // The brush follows the pointer on a critically damped spring, in small substeps, so its path is a
     // smooth unbroken curve however unevenly mouse events or frames arrive.
-    const steps = Math.max(1, Math.ceil(dt / 0.008));
+    const steps = Math.max(1, Math.ceil(dt / 0.006));
     const h = dt / steps;
     let moved = false;
     for (let s = 0; s < steps; s++) {
@@ -386,7 +387,7 @@ void main() {
       if (len < 1e-6) continue;
       moved = true;
       // Faster strokes carry further, like a quicker hand through water.
-      const push = 0.8 * (0.6 + Math.min(1.4, (len / h) * 0.7));
+      const push = 1.15 * (0.6 + Math.min(1.4, (len / h) * 0.7));
       splat(followX, followY, mx * push, my * push);
     }
     if (!moved && !nudged && flow === 0) return;
@@ -397,7 +398,7 @@ void main() {
     // a second easing, so they glide into place instead of keeping step with the brush.
     const keep = Math.exp(-dt * 1.0);
     const soften = Math.min(1, dt * 4);
-    const glide = 1 - Math.exp(-dt / 0.26);
+    const glide = 1 - Math.exp(-dt / 0.16);
     blur(fieldX, softX);
     blur(fieldY, softY);
     let peak = 0;
@@ -479,7 +480,7 @@ void main() {
     perspective(((wide ? 55 : 70) * Math.PI) / 180, aspect, 0.05, 200);
     gl.uniformMatrix4fv(U.uProj, false, proj);
     gl.uniform1f(U.uScale, dpr * Math.max(0.7, innerHeight / 900));
-    gl.uniform1f(U.uStarMax, 4 * dpr); // stars stay crisp points even up close
+    gl.uniform1f(U.uStarMax, 5 * dpr); // stars stay crisp points even up close
     // At the top the galaxy sits beside the headline: to the right on wide screens, above it on phones.
     [shiftX, shiftY] = wide ? [0.36, 0.1] : [0, 0.45];
   }
@@ -493,7 +494,7 @@ void main() {
   let sp = 0;
   let time = 30;
   // Flow brush: follows the pointer on a critically damped spring (FOLLOW is its stiffness, per second).
-  const FOLLOW = 12;
+  const FOLLOW = 22;
   let followX = 0;
   let followY = 0;
   let followVX = 0;

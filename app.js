@@ -16,8 +16,8 @@
     rotate: '<path d="M10.8 5.1A7 7 0 0 1 17.4 16.5"/><path d="M20 15.5 17.4 16.5 17.9 13.7"/><path d="M13.2 18.9A7 7 0 0 1 6.6 7.5"/><path d="M4 8.5 6.6 7.5 6.1 10.3"/>',
     // Mise: outlets as modules on a grid, one of them counted.
     tally: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M12 5v14M5 12h14"/><circle cx="15.5" cy="15.5" r="1.15" fill="currentColor" stroke="none"/>',
-    // Bookends: two brackets holding a leaning book.
-    bookends: '<path d="M9.5 5H6.5v14h3"/><path d="M14.5 5h3v14h-3"/><path d="M10.9 19 12.5 7.4 14.3 7.7 12.7 19.3Z"/>',
+    // Secret Menu: a padlock, its shackle closed, one redacted bar across the body.
+    lock: '<rect x="5" y="10.5" width="14" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/><path d="M9.5 15h5"/>',
     // Dispatch: a load sent on down the line.
     send: '<path d="M4.5 12H9"/><path d="M10.5 6.5 16 12l-5.5 5.5"/>',
     // Chucky: their own cat, from the 220 grid of chucky-chi.vercel.app, the site this logo opens,
