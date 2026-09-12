@@ -22,22 +22,6 @@
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const small = matchMedia('(max-width: 700px)').matches;
 
-  /* ------------------------------------------------------ row reveals */
-  if ('IntersectionObserver' in window && !still) {
-    root.classList.add('reveal');
-    const io = new IntersectionObserver((entries) => {
-      entries.filter((e) => e.isIntersecting).forEach((e, k) => {
-        const row = e.target;
-        row.style.transitionDelay = `${k * 80}ms`;
-        row.classList.add('in');
-        // Drop the stagger once it has played, or hover would lag behind it.
-        setTimeout(() => { row.style.transitionDelay = ''; }, 1000 + k * 80);
-        io.unobserve(row);
-      });
-    }, { rootMargin: '0px 0px -6% 0px' });
-    document.querySelectorAll('.tile').forEach((row) => io.observe(row));
-  }
-
   /* ------------------------------------------ mouse parallax and cursor */
   let pointerX = 0;
   let pointerY = 0;
@@ -212,8 +196,8 @@ void main() {
   const BLUE = [0.5, 0.62, 1];
 
   const N = small
-    ? { far: 1100, bulge: 3000, disc: 12000, nebula: 700, glow: 52, dust: 380 }
-    : { far: 2200, bulge: 6500, disc: 28000, nebula: 1400, glow: 52, dust: 760 };
+    ? { far: 1600, bulge: 4200, disc: 17000, nebula: 900, glow: 60, dust: 500 }
+    : { far: 3200, bulge: 9000, disc: 42000, nebula: 1800, glow: 60, dust: 1000 };
   const EMIT = N.far + N.bulge + N.disc + N.nebula + N.glow; // drawn additively, then dust darkens
   const COUNT = EMIT + N.dust;
 
@@ -321,6 +305,22 @@ void main() {
     gl.uniform2f(U.uFieldSize, GW, GH);
   }
 
+  // For app.js: where the galaxy's core is on screen (logos fly out from around it), and a way for
+  // those flying logos to stir the stars they pass, through the same flow field as the pointer.
+  let coreX = innerWidth / 2;
+  let coreY = innerHeight / 2;
+  let nudged = false;
+  window.UNISIS_GALAXY = {
+    core: () => [coreX, coreY],
+    stir(px, py, dxPx, dyPx, amount = 1) {
+      if (!vtf || still) return;
+      const half = innerHeight / 2;
+      const k = 0.9 * amount;
+      splat((px / innerWidth) * 2 - 1, 1 - (py / innerHeight) * 2, (dxPx / half) * k, (-dyPx / half) * k);
+      nudged = true;
+    },
+  };
+
   // Adds carry (mx, my) around clip-space point (x, y) with a gaussian falloff.
   function splat(x, y, mx, my) {
     const sx = (SIGMA / (innerWidth / innerHeight)) * (GW / 2); // brush radius in columns
@@ -389,7 +389,8 @@ void main() {
       const push = 0.8 * (0.6 + Math.min(1.4, (len / h) * 0.7));
       splat(followX, followY, mx * push, my * push);
     }
-    if (!moved && flow === 0) return;
+    if (!moved && !nudged && flow === 0) return;
+    nudged = false;
 
     // Ease back and soften: the field relaxes slowly toward zero and blurs a little every frame, so the
     // carry spreads like water and never overshoots into ripples. The stars then follow the field through
@@ -510,6 +511,12 @@ void main() {
     gl.uniform1f(U.uTime, time);
     gl.uniform1f(U.uFlow, flow);
     gl.uniform2f(U.uShift, shiftX * (1 - e), shiftY * (1 - e));
+    // Where the core lands on screen: the origin through view and projection, plus the shift above.
+    const coreW = -view[14];
+    if (coreW > 0) {
+      coreX = ((proj[0] * view[12]) / coreW + shiftX * (1 - e) + 1) * 0.5 * innerWidth;
+      coreY = (1 - ((proj[5] * view[13]) / coreW + shiftY * (1 - e))) * 0.5 * innerHeight;
+    }
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.blendFunc(gl.ONE, gl.ONE); // light adds up
     gl.uniform1f(U.uDust, 0);

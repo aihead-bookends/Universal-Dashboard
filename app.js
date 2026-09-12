@@ -5,26 +5,37 @@
   const APPS = Array.isArray(window.UNISIS_APPS) ? window.UNISIS_APPS : [];
   const $ = (s) => document.querySelector(s);
 
-  // 24px line icons. Trusted constants only — app data is never put through innerHTML.
+  // One 24px grid, one stroke weight: each mark is a geometric abstraction of what its app does.
+  // Trusted constants only — app data is never put through innerHTML.
   const ICONS = {
-    factory:  '<path d="M2.5 20.5h19"/><path d="M4 20.5v-10l5 3v-3l5 3V4h5v16.5"/><path d="M7.5 17h2M12.5 17h2"/>',
-    phone:    '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18h3"/>',
-    truck:    '<path d="M14 16.5v-11H2v11h2"/><path d="M14 8.5h4l3.5 4v4H19"/><path d="M8 16.5h7"/><circle cx="6" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
-    pan:      '<circle cx="9.5" cy="13.5" r="6.5"/><circle cx="9.5" cy="13.5" r="2"/><path d="M14.1 8.9 21 3"/>',
-    building: '<rect x="4.5" y="3" width="15" height="18" rx="1.5"/><path d="M10 21v-3.5h4V21"/><path d="M8.5 7.5h1.5M14 7.5h1.5M8.5 11.5h1.5M14 11.5h1.5"/>',
-    route:    '<circle cx="6" cy="18.5" r="2.5"/><circle cx="18" cy="5.5" r="2.5"/><path d="M8.5 18.5H15a3.25 3.25 0 0 0 0-6.5H9a3.25 3.25 0 0 1 0-6.5h6.5"/>',
-    hat:      '<path d="M6.5 14a4 4 0 0 1 .6-7.9 5 5 0 0 1 9.8 0A4 4 0 0 1 17.5 14v6h-11z"/><path d="M6.5 17h11"/>',
-    receipt:  '<path d="M5.5 2.5h13v19l-2.2-1.5-2.1 1.5-2.2-1.5-2.2 1.5-2.1-1.5-2.2 1.5z"/><path d="M9 7.5h6M9 11.5h6M9 15.5h3.5"/>',
-    grid:     '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
+    // Kostkraft: an isometric cube of stock with one face left open — yield against wastage.
+    cube: '<path d="M12 4 18.9 8 18.9 16 12 20 5.1 16 5.1 8Z"/><path d="M12 12V20M12 12 5.1 8"/>',
+    // Instasuite: a lens in a rounded frame, the social square.
+    lens: '<rect x="4.5" y="4.5" width="15" height="15" rx="4.5"/><circle cx="12" cy="12" r="3.4"/><circle cx="16.4" cy="7.6" r=".95" fill="currentColor" stroke="none"/>',
+    // Shifly: two arcs chasing each other, shift after shift.
+    rotate: '<path d="M10.8 5.1A7 7 0 0 1 17.4 16.5"/><path d="M20 15.5 17.4 16.5 17.9 13.7"/><path d="M13.2 18.9A7 7 0 0 1 6.6 7.5"/><path d="M4 8.5 6.6 7.5 6.1 10.3"/>',
+    // Mise: outlets as modules on a grid, one of them counted.
+    tally: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M12 5v14M5 12h14"/><circle cx="15.5" cy="15.5" r="1.15" fill="currentColor" stroke="none"/>',
+    // Bookends: two brackets holding a leaning book.
+    bookends: '<path d="M9.5 5H6.5v14h3"/><path d="M14.5 5h3v14h-3"/><path d="M10.9 19 12.5 7.4 14.3 7.7 12.7 19.3Z"/>',
+    // Dispatch: a load sent on down the line.
+    send: '<path d="M4.5 12H9"/><path d="M10.5 6.5 16 12l-5.5 5.5"/>',
+    // Chucky: their own cat, from the 220 grid of chucky-chi.vercel.app, the site this logo opens,
+    // scaled onto ours. Head, shades and one whisker each side survive at this size; the body and the
+    // glint do not. The inner stroke width cancels the scale, keeping the weight of every other mark.
+    cat: '<g transform="translate(-5.02 1.03) scale(.148)" stroke-width="10.8">'
+      + '<path d="M74 70 L68 30 L94 54 C102 50 118 50 126 56 L152 32 L146 74 C156 96 150 120 110 121 C72 121 64 94 74 70 Z"/>'
+      + '<path d="M80 88 L58 82M150 84 L172 78"/>'
+      + '<rect x="74" y="64" width="30" height="18" fill="currentColor" stroke="none"/>'
+      + '<rect x="112" y="62" width="26" height="15" fill="currentColor" stroke="none"/></g>',
+    // OrderGenie: service rising, counted off a baseline.
+    chart: '<path d="M5.5 19h13"/><path d="M8 16v-4M12 16V9M16 16V6"/>',
+    // Anything unknown: four modules on the grid.
+    grid: '<rect x="4.5" y="4.5" width="6" height="6" rx="1.5"/><rect x="13.5" y="4.5" width="6" height="6" rx="1.5"/><rect x="4.5" y="13.5" width="6" height="6" rx="1.5"/><rect x="13.5" y="13.5" width="6" height="6" rx="1.5"/>',
   };
-  // Chucky's head from the Bookends landing, in its own coordinate space.
-  const CAT = '<svg viewBox="56 22 108 108" fill="none" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-    + '<path d="M74 70 L68 30 L94 54 C102 50 118 50 126 56 L152 32 L146 74 C156 96 150 120 110 121 C72 121 64 94 74 70 Z"/>'
-    + '<rect x="74" y="64" width="30" height="18" fill="currentColor" stroke="none"/><rect x="112" y="62" width="26" height="15" fill="currentColor" stroke="none"/></svg>';
 
-  const iconSvg = (name) => name === 'cat' ? CAT
-    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-      + (ICONS[name] || ICONS.grid) + '</svg>';
+  const iconSvg = (name) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + (ICONS[name] || ICONS.grid) + '</svg>';
 
   // {host} = the machine this page was opened from (empty on file://).
   const host = location.hostname || 'localhost';
@@ -53,6 +64,7 @@
     ico.innerHTML = iconSvg(app.icon);
     const info = make('div', 'info');
     info.append(make('h2', 'name', app.name));
+    if (app.tag) info.append(make('p', 'tag', app.tag));
     if (app.desc) info.append(make('p', 'desc', app.desc));
     tile.append(ico, info);
 
@@ -76,7 +88,7 @@
     }
     info.append(meta);
     grid.append(tile);
-    return { app, href, tile, status, haystack: `${app.name} ${app.desc || ''}`.toLowerCase() };
+    return { app, href, tile, status, haystack: `${app.name} ${app.tag || ''} ${app.desc || ''}`.toLowerCase() };
   });
 
   function setStatus(el, state, label) {
@@ -120,6 +132,95 @@
     }
   }
 
+  /* --------------------------------------------------------- emergence */
+  // As the page scrolls, each logo in turn rises out of the galaxy: it starts small among the stars
+  // near the core, arcs out to its place and stirs the stars it passes (galaxy.js). Scrolling back up
+  // sends it home again. Progress follows the scroll, eased so the flight glides between wheel steps.
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const flights = tiles.map(({ tile }, i) => ({
+    tile,
+    ico: tile.firstChild,
+    shown: still ? 1 : 0,
+    // Where among the stars it starts, around the core: a golden-angle spread, so no two share a spot.
+    angle: i * 2.39996,
+    reach: 0.08 + 0.2 * ((i * 0.618034) % 1),
+    x: NaN,
+    y: NaN,
+    landed: false,
+  }));
+  const flightOf = new Map(flights.map((f) => [f.tile, f]));
+  const landed = (tile) => flightOf.get(tile).shown > 0.97;
+
+  let lastFlight = performance.now();
+  function fly(now) {
+    const dt = Math.min(0.05, (now - lastFlight) / 1000);
+    lastFlight = now;
+    const W = innerWidth;
+    const H = innerHeight;
+    const galaxy = window.UNISIS_GALAXY;
+    const [coreX, coreY] = galaxy ? galaxy.core() : [W / 2, H / 2];
+    const glide = still ? 1 : 1 - Math.exp(-dt / 0.22);
+    // Read every logo's resting place first, then write, so the page is laid out once per frame.
+    const slots = flights.map((f) => {
+      if (f.tile.hidden) return null;
+      const box = f.tile.getBoundingClientRect();
+      return [box.left + f.ico.offsetLeft + f.ico.offsetWidth / 2, box.top + f.ico.offsetTop + f.ico.offsetHeight / 2];
+    });
+    // At the foot of the page nothing can scroll higher, so every logo on screen finishes its flight.
+    const atBottom = scrollY >= document.documentElement.scrollHeight - H - 2;
+    let justLanded = false;
+    flights.forEach((f, i) => {
+      const slot = slots[i];
+      if (!slot) return;
+      // A logo flies out while its place scrolls up the bottom quarter of the screen: a shorter stretch than
+      // the gap between logos (index.html), so each one lands before the next sets off.
+      const target = still || (atBottom && slot[1] < H) ? 1 : Math.min(1, Math.max(0, (H * 0.96 - slot[1]) / (H * 0.24)));
+      f.shown += (target - f.shown) * glide;
+      const st = f.ico.style;
+      if (target === 1 && f.shown > 0.995) { // by here the flight is within a fraction of a pixel of home
+        if (!f.landed) {
+          ['--ex', '--ey', '--es', '--eo'].forEach((name) => st.removeProperty(name));
+          f.tile.classList.remove('flying');
+          f.landed = true;
+          f.x = f.y = NaN;
+          justLanded = true;
+        }
+        return;
+      }
+      if (f.landed) {
+        f.tile.classList.add('flying');
+        f.landed = false;
+      }
+      const p = f.shown;
+      const e = 1 - (1 - p) ** 3;
+      const span = Math.min(W, H);
+      const ox = coreX + Math.cos(f.angle) * f.reach * span;
+      const oy = coreY + Math.sin(f.angle) * f.reach * span * 0.55; // the disc is seen tilted
+      const dx = slot[0] - ox;
+      const dy = slot[1] - oy;
+      const bend = Math.sin(Math.PI * e) * 0.18; // a gentle arc rather than a straight line
+      const x = ox + dx * e - dy * bend;
+      const y = oy + dy * e + dx * bend;
+      st.setProperty('--ex', `${(x - slot[0]).toFixed(1)}px`);
+      st.setProperty('--ey', `${(y - slot[1]).toFixed(1)}px`);
+      st.setProperty('--es', (0.18 + 0.82 * e).toFixed(3));
+      st.setProperty('--eo', Math.min(1, p / 0.3).toFixed(3));
+      // Stir the stars it flies through: strongest mid-flight, nothing once it has landed.
+      if (galaxy && p > 0.01 && p < 0.99 && !Number.isNaN(f.x)) {
+        const mx = x - f.x;
+        const my = y - f.y;
+        if (Math.abs(mx) + Math.abs(my) > 0.3) galaxy.stir(x, y, mx, my, Math.sin(Math.PI * p));
+      }
+      f.x = x;
+      f.y = y;
+    });
+    // A logo that lands in the middle of the screen opens, as if the scroll had just brought it there.
+    if (justLanded) focusMiddle();
+    requestAnimationFrame(fly);
+  }
+  flights.forEach((f) => f.tile.classList.add('flying'));
+  requestAnimationFrame(fly);
+
   /* -------------------------------------------------- details on demand */
   // One app shows its details at a time: the one under the mouse, or the one a
   // scroll brings to the middle of the screen. Moving the mouse off folds it
@@ -134,7 +235,7 @@
   }
   tiles.forEach(({ tile }) => {
     tile.addEventListener('pointerenter', (e) => {
-      if (e.pointerType !== 'mouse') return;
+      if (e.pointerType !== 'mouse' || !landed(tile)) return;
       clearTimeout(leaveTimer);
       setActive(tile);
     });
@@ -152,7 +253,7 @@
     let best = null;
     let bestGap = innerHeight * 0.18;
     tiles.forEach(({ tile }) => {
-      if (tile.hidden) return;
+      if (tile.hidden || !landed(tile)) return;
       const r = tile.firstChild.getBoundingClientRect();
       const gap = Math.abs(r.top + r.height / 2 - mid);
       if (gap < bestGap) {
