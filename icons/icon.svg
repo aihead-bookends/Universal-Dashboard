@@ -1,23 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Full-bleed background, artwork inside the central 80% circle, so the same
-       file is safe as a maskable icon (Android crops it to a circle/squircle). -->
-  <defs>
-    <radialGradient id="glow" cx="50%" cy="30%" r="80%">
-      <stop offset="0" stop-color="#1C1A24"/>
-      <stop offset="1" stop-color="#000000"/>
-    </radialGradient>
-    <linearGradient id="core" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#F7DE9A"/>
-      <stop offset="1" stop-color="#E8B94A"/>
-    </linearGradient>
-    <linearGradient id="arm" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#C58CE0"/>
-      <stop offset="1" stop-color="#6B80FF"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#glow)"/>
-  <rect x="156" y="156" width="88" height="88" rx="24" fill="url(#core)"/>
-  <rect x="275" y="163" width="74" height="74" rx="18" fill="none" stroke="#F3F1EC" stroke-opacity=".85" stroke-width="14"/>
-  <rect x="163" y="275" width="74" height="74" rx="18" fill="none" stroke="#F3F1EC" stroke-opacity=".85" stroke-width="14"/>
-  <rect x="268" y="268" width="88" height="88" rx="24" fill="url(#arm)"/>
+  <!-- The mark alone, on a transparent background: a pointed hexagon cut into three upright slices,
+       parted by negative space. The middle slice keeps both points, the outer two are cut on the
+       hexagon's slanted edges, and the whole thing leans: skewY tips it, the translate re-centres it.
+       icon-mask.svg is the same mark on a dark ground, for Android's maskable icon. -->
+  <!-- Brand gold, so the mark carries on a light tab strip and on a dark taskbar alike; an SVG used
+       as an image ignores the page colour scheme, so a light/dark swap cannot be relied on here. -->
+  <g fill="#D8A94A" transform="translate(0 27) skewY(-6)">
+    <path d="M130 156 198 110 198 402 130 356Z"/>
+    <path d="M224 92 256 70 288 92 288 420 256 442 224 420Z"/>
+    <path d="M314 110 382 156 382 356 314 402Z"/>
+  </g>
 </svg>

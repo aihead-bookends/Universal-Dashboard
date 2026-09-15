@@ -336,6 +336,27 @@
   syncOnline();
   probeAll();
 
+  /* --------------------------------------------------------- account */
+  // The server only serves this page to a signed-in session; this just names them and offers a way out.
+  // Hosted without the sign-in functions there is no api/me, so the footer stays as it is.
+  (async () => {
+    const who = $("#who");
+    try {
+      const res = await fetch("api/me", { headers: { Accept: "application/json" } });
+      if (!res.ok) return;
+      const { name } = await res.json();
+      who.append(`Signed in as ${name}`);
+      const out = make("button", "", "Sign out");
+      out.type = "button";
+      out.addEventListener("click", async () => {
+        await fetch("api/logout", { method: "POST" });
+        location.replace("login");
+      });
+      who.append(out);
+      who.hidden = false;
+    } catch { /* no sign-in behind this copy of the dashboard */ }
+  })();
+
   /* ----------------------------------------------------------- install */
   const installBtn = $('#install');
   const sheet = $('#iosSheet');

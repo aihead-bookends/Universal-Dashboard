@@ -1,0 +1,238 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex">
+<title>Sign in · Bookends Universal Dashboard</title>
+<link rel="icon" href="icons/icon.svg?v=5" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png?v=5" sizes="192x192" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* The dashboard's own galaxy runs behind this page — the same galaxy.js, the same camera it
+   uses at the top of the dashboard — with the sign-in set against it on the left. Signing in
+   clears the sign-in away and hands over to the dashboard, which opens on that same galaxy
+   still turning, so there is nothing to blink between. */
+:root{
+  --text:#F3F1EC;--dim:rgba(243,241,236,.68);--muted:rgba(243,241,236,.46);--faint:rgba(243,241,236,.24);
+  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);
+  --gold:#E8B94A;--warn:#E8A33D;
+  --serif:'Lora',Georgia,'Times New Roman',serif;
+  --mono:'DM Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --safe-t:env(safe-area-inset-top,0px);--safe-r:env(safe-area-inset-right,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);--safe-l:env(safe-area-inset-left,0px);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important} /* .or is display:flex, which would otherwise beat the attribute */
+html{background:#000}
+body{margin:0;min-height:100svh;display:flex;flex-direction:column;justify-content:center;overflow-x:hidden;
+  background:#000;color:var(--text);font-family:var(--serif);-webkit-font-smoothing:antialiased;
+  padding:calc(40px + var(--safe-t)) calc(clamp(24px,5vw,96px) + var(--safe-r)) calc(40px + var(--safe-b))
+    calc(clamp(24px,5vw,96px) + var(--safe-l))}
+
+/* the galaxy fills the screen; the gradient only shows without WebGL */
+.space{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(45% 40% at 68% 38%,rgba(232,185,74,.12),transparent 70%),
+    radial-gradient(60% 55% at 28% 78%,rgba(110,120,255,.09),transparent 72%),#000}
+.space canvas{display:block;width:100%;height:100%}
+/* the edges fall off to black, so the words have something dark to sit against */
+.veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(125% 95% at 55% 45%,transparent 45%,rgba(0,0,0,.5) 100%)}
+
+/* the sign-in itself: no panel, just the words and the fields against the galaxy */
+main{position:relative;z-index:2;width:100%;max-width:440px;
+  transition:opacity .55s var(--ease),transform .9s var(--ease),filter .6s var(--ease)}
+/* signing in: the sign-in clears, and the galaxy behind it carries on into the dashboard */
+body.jump main{opacity:0;transform:translateY(-12px);filter:blur(2px)}
+
+.eyebrow{margin:0;font:400 11px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+h1{margin:18px 0 0;font-size:clamp(38px,5.4vw,64px);font-weight:600;line-height:1;letter-spacing:-.02em}
+h1 em{padding-right:.06em;font-style:italic;color:var(--gold);
+  background:linear-gradient(100deg,#F7DE9A 0%,#E8B94A 45%,#F3F1EC 115%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.lede{margin:16px 0 0;font-size:16px;line-height:1.5;font-style:italic;color:var(--dim)}
+
+form{margin-top:clamp(28px,5vh,40px);display:flex;flex-direction:column;gap:14px}
+label{display:block;font:400 10.5px var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+input{width:100%;height:52px;padding:0 20px;border:1px solid var(--line2);border-radius:999px;
+  background:rgba(255,255,255,.05);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  color:var(--text);font:16px var(--serif);outline:0;
+  transition:border-color .4s var(--ease),background-color .4s var(--ease),box-shadow .4s var(--ease)}
+input::placeholder{color:var(--muted);font-style:italic}
+input:focus{border-color:rgba(232,185,74,.55);background-color:rgba(255,255,255,.09);box-shadow:0 0 0 5px rgba(232,185,74,.10)}
+button{margin-top:6px;min-height:52px;border:0;border-radius:999px;cursor:pointer;background:var(--text);color:#000;
+  font:500 11.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;
+  transition:opacity .3s var(--ease),transform .5s var(--ease),box-shadow .5s var(--ease)}
+button:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+button[disabled]{opacity:.55;cursor:default;transform:none}
+.ways{margin-top:clamp(20px,3vh,28px);display:flex;flex-direction:column;gap:16px}
+#google{min-height:44px;color-scheme:light}
+.or{display:flex;align-items:center;gap:14px;font:400 10px var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--faint)}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.note{min-height:20px;margin:2px 0 0;font:400 11px var(--mono);letter-spacing:.08em;color:var(--warn)}
+.foot{margin:clamp(30px,6vh,56px) 0 0;font:400 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+@media (max-width:640px){
+  h1{font-size:36px}
+  .foot{font-size:9px;letter-spacing:.14em}
+}
+@media (prefers-reduced-motion:reduce){
+  button:hover{transform:none}
+  main{transition-duration:.2s}
+}
+</style>
+</head>
+<body>
+<div class="space" aria-hidden="true"><canvas id="galaxy"></canvas></div>
+<div class="veil" aria-hidden="true"></div>
+
+<main>
+  <p class="eyebrow">Bookends · Universal Dashboard</p>
+  <h1>Sign <em>in</em></h1>
+  <p class="lede">Every Bookends app, one universe. Ask Krish for an account.</p>
+
+  <div class="ways" id="ways" hidden>
+    <div id="google"></div>
+    <p class="or" id="or" hidden>or</p>
+  </div>
+
+  <form id="form" autocomplete="on" hidden>
+    <div>
+      <label for="name">Name</label>
+      <input id="name" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus placeholder="your name">
+    </div>
+    <div>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+    </div>
+    <p class="note" id="note" role="status" aria-live="polite"></p>
+    <button id="go" type="submit">Enter the dashboard</button>
+  </form>
+
+  <p class="foot">Bookends Pvt Ltd · Surat &amp; Ahmedabad</p>
+</main>
+
+<script src="galaxy.js"></script>
+<script>
+(() => {
+  'use strict';
+  const form = document.getElementById('form');
+  const note = document.getElementById('note');
+  const go = document.getElementById('go');
+  const or = document.getElementById('or');
+  const gbox = document.getElementById('google');
+  const ways = document.getElementById('ways');
+
+
+  // Signing in is only the sign-in clearing. The galaxy behind it is the dashboard's own, at the
+  // dashboard's own camera, and it hands its clock over — so when the page turns over the same
+  // galaxy is there, in the same place, still turning. To keep even the swap from flashing, the
+  // dashboard is prepared in the background first and then swapped in already painted.
+  async function land() {
+    try {
+      sessionStorage.setItem('unisis-arriving', '1');
+    } catch { /* private mode: the dashboard simply opens without the fade-in */ }
+    prepareDashboard();
+    document.body.classList.add('jump');
+    await new Promise((done) => setTimeout(done, 700));
+    // Hand the dashboard one frame of this galaxy, so its first paint is already the galaxy
+    // rather than an empty page while WebGL starts.
+    try {
+      const frame = window.UNISIS_GALAXY && window.UNISIS_GALAXY.snapshot();
+      if (frame) sessionStorage.setItem('unisis-galaxy-frame', frame);
+    } catch { /* no snapshot: the dashboard opens the ordinary way */ }
+    location.replace('./');
+  }
+
+  function prepareDashboard() {
+    // Where it is supported, this renders the dashboard off screen and the navigation becomes
+    // a swap rather than a load. Everywhere else, the fetches at least warm the cache.
+    try {
+      if (HTMLScriptElement.supports && HTMLScriptElement.supports('speculationrules')) {
+        const rules = document.createElement('script');
+        rules.type = 'speculationrules';
+        rules.textContent = JSON.stringify({ prerender: [{ urls: ['./'] }] });
+        document.head.append(rules);
+        return;
+      }
+    } catch { /* fall through to the plain warm-up */ }
+    for (const url of ['./', 'app.js', 'apps.js']) {
+      fetch(url, { credentials: 'same-origin' }).catch(() => { /* it will load the usual way */ });
+    }
+  }
+
+  async function post(path, body) {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) return land();
+    const data = await res.json().catch(() => ({}));
+    note.textContent = data.error || 'That did not work.';
+    return null;
+  }
+
+  /* ------------------------------------------------------------ Google */
+  // Google hands the page a signed token; the server checks it and the allow list.
+  window.onGoogleCredential = (response) => {
+    note.textContent = 'Checking with Google…';
+    post('api/google', { credential: response.credential });
+  };
+
+  function showGoogle(clientId) {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = () => {
+      google.accounts.id.initialize({ client_id: clientId, callback: window.onGoogleCredential });
+      google.accounts.id.renderButton(gbox, {
+        theme: 'filled_black', size: 'large', shape: 'pill', width: 320, text: 'continue_with',
+      });
+    };
+    script.onerror = () => { note.textContent = 'Google sign-in did not load. Check the connection.'; };
+    document.head.append(script);
+  }
+
+  /* ---------------------------------------------------- name and password */
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    go.disabled = true;
+    note.textContent = 'Checking…';
+    try {
+      await post('api/login', { name: form.username.value, password: form.password.value });
+    } catch {
+      note.textContent = 'The dashboard is not answering. Is the server running?';
+    }
+    go.disabled = false;
+    form.password.select();
+  });
+
+  /* --------------------------------------- show whichever ways are set up */
+  (async () => {
+    let config = { google: '', passwords: false };
+    try {
+      config = await (await fetch('api/config')).json();
+    } catch { /* fall through to the message below */ }
+
+    if (config.google) {
+      ways.hidden = false;
+      showGoogle(config.google);
+    }
+    if (config.passwords) {
+      form.hidden = false;
+      or.hidden = !config.google;
+      if (!config.google) form.username.focus();
+    }
+    if (!config.google && !config.passwords) {
+      note.textContent = 'Sign-in is not set up yet on this dashboard.';
+    }
+  })();
+})();
+</script>
+</body>
+</html>

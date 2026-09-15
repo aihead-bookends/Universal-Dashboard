@@ -1,12 +1,17 @@
 'use strict';
 
 /**
- * Rasterises icons/icon.svg into the PNGs that home screens, the manifest and
+ * Rasterises the icon SVGs into the PNGs that home screens, the manifest and
  * APK packagers need. Uses headless Chrome/Edge, so nothing to install.
  *
  *   npm run build:icons
  *
- * Re-run after editing icon.svg.
+ * icon.svg      -> icon-180/192/512.png, transparent, so the taskbar and tab
+ *                  show the mark alone with no square behind it.
+ * icon-mask.svg -> icon-maskable-512.png, on its own dark ground, which is what
+ *                  Android crops to a circle or squircle.
+ *
+ * Re-run after editing either SVG.
  */
 
 const fs = require('node:fs');
@@ -15,8 +20,12 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const ICONS = path.join(__dirname, '..', 'icons');
-const SVG = path.join(ICONS, 'icon.svg');
-const SIZES = [180, 192, 512];
+const JOBS = [
+  { svg: 'icon.svg', size: 180, out: 'icon-180.png', clear: true },
+  { svg: 'icon.svg', size: 192, out: 'icon-192.png', clear: true },
+  { svg: 'icon.svg', size: 512, out: 'icon-512.png', clear: true },
+  { svg: 'icon-mask.svg', size: 512, out: 'icon-maskable-512.png', clear: false },
+];
 
 const BROWSERS = [
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -34,29 +43,33 @@ if (!exe) {
 }
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'unisis-icons-'));
-const svgUrl = 'file:///' + SVG.replace(/\\/g, '/');
 
-for (const size of SIZES) {
-  const page = path.join(tmp, `icon-${size}.html`);
-  const out = path.join(ICONS, `icon-${size}.png`);
-  fs.writeFileSync(page, `<html><body style="margin:0;background:#000000"><img src="${svgUrl}" width="${size}" height="${size}" style="display:block"></body></html>`);
+for (const job of JOBS) {
+  const page = path.join(tmp, `${job.out}.html`);
+  const out = path.join(ICONS, job.out);
+  const svgUrl = 'file:///' + path.join(ICONS, job.svg).replace(/\\/g, '/');
+  fs.writeFileSync(page, `<html><body style="margin:0;background:${job.clear ? 'transparent' : '#000'}">`
+    + `<img src="${svgUrl}" width="${job.size}" height="${job.size}" style="display:block"></body></html>`);
 
   spawnSync(exe, [
     '--headless=new', '--disable-gpu', '--hide-scrollbars', '--no-first-run',
     `--user-data-dir=${path.join(tmp, 'profile')}`,
-    '--force-device-scale-factor=1', `--window-size=${size},${size}`,
+    // Transparent page behind the mark, so the PNG keeps its alpha.
+    // Transparent ground, so the PNG keeps its alpha.
+    ...(job.clear ? ['--default-background-color=00000000'] : []),
+    '--force-device-scale-factor=1', `--window-size=${job.size},${job.size}`,
     `--screenshot=${out}`, 'file:///' + page.replace(/\\/g, '/'),
   ], { stdio: 'ignore', timeout: 30_000 });
 
-  // PNG IHDR: width and height are big-endian uint32 at bytes 16 and 20.
+  // PNG IHDR: width and height are big-endian uint32 at bytes 16 and 20, colour type at 25 (6 = RGBA).
   const png = fs.existsSync(out) ? fs.readFileSync(out) : null;
   const w = png ? png.readUInt32BE(16) : 0;
   const h = png ? png.readUInt32BE(20) : 0;
-  if (w !== size || h !== size) {
-    console.error(`icon-${size}.png came out ${w}x${h}, expected ${size}x${size}`);
+  if (w !== job.size || h !== job.size) {
+    console.error(`${job.out} came out ${w}x${h}, expected ${job.size}x${job.size}`);
     process.exit(1);
   }
-  console.log(`icons/icon-${size}.png  ${size}x${size}`);
+  console.log(`icons/${job.out}  ${w}x${h}  ${job.clear ? 'transparent' : 'on dark'}  (colour type ${png[25]})`);
 }
 
 fs.rmSync(tmp, { recursive: true, force: true });

@@ -313,6 +313,17 @@ void main() {
   let nudged = false;
   window.UNISIS_GALAXY = {
     core: () => [coreX, coreY],
+    // One frame of the galaxy as an image. The login page hands this to the dashboard so its
+    // very first paint is already the galaxy, instead of an empty page for a frame or two.
+    // Drawn and read in the same task, which is the only time the drawing buffer still holds it.
+    snapshot() {
+      try {
+        draw();
+        return canvas.toDataURL('image/jpeg', 0.7);
+      } catch {
+        return '';
+      }
+    },
     stir(px, py, dxPx, dyPx, amount = 1) {
       if (!vtf || still) return;
       const half = innerHeight / 2;
@@ -492,7 +503,14 @@ void main() {
   }
 
   let sp = 0;
+  // The login page runs this same galaxy. It hands its clock over in sessionStorage, so when
+  // the page turns over the arms are where they were rather than snapping back to the start.
+  const CLOCK = 'unisis-galaxy-time';
   let time = 30;
+  try {
+    const carried = Number(sessionStorage.getItem(CLOCK));
+    if (Number.isFinite(carried) && carried > 0) time = carried;
+  } catch { /* private mode: it simply starts where it always starts */ }
   // Flow brush: follows the pointer on a critically damped spring (FOLLOW is its stiffness, per second).
   const FOLLOW = 22;
   let followX = 0;
@@ -540,7 +558,9 @@ void main() {
   addEventListener('resize', () => { resize(); measure(); });
   new ResizeObserver(measure).observe(document.body); // search filtering changes the page height
 
+  let bridge = document.getElementById('bridge'); // the still frame handed over by the login page
   let raf = 0;
+  let ticks = 0;
   let last = performance.now();
   let lastY = scrollY;
   let boost = 0;
@@ -556,6 +576,10 @@ void main() {
     lastY = scrollY;
     boost = Math.max(-1.2, Math.min(1.2, (boost + dy * 0.004) * Math.exp(-dt * 2.5)));
     time += dt * (0.12 + boost);
+    // Leave the clock where anyone opening the next page can pick it up.
+    if ((ticks++ & 15) === 0) {
+      try { sessionStorage.setItem(CLOCK, time.toFixed(2)); } catch { /* nothing to carry */ }
+    }
 
     if (vtf) stirField(dt);
     if (Math.abs(sp - shown) > 0.002) {
@@ -563,6 +587,12 @@ void main() {
       root.style.setProperty('--sp', sp.toFixed(3));
     }
     draw();
+    if (bridge) {
+      const handed = bridge;
+      bridge = null;
+      handed.style.opacity = '0';
+      setTimeout(() => handed.remove(), 400);
+    }
     raf = requestAnimationFrame(frame);
   }
   raf = requestAnimationFrame(frame);

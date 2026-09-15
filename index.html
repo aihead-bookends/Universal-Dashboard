@@ -14,11 +14,23 @@
 <meta name="apple-mobile-web-app-title" content="Bookends">
 <title>Bookends Universal Dashboard</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon.svg?v=5" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png?v=5" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-180.png?v=5">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  // Arriving from the sign-in? Hold the page content back a beat so the galaxy is what greets
+  // you. The login page also hands over one frame of its galaxy as an image: painting that
+  // first means this page opens on the galaxy rather than on an empty frame or two while
+  // WebGL starts. galaxy.js drops it as soon as it has drawn.
+  try {
+    if (sessionStorage.getItem('unisis-arriving')) {
+      sessionStorage.removeItem('unisis-arriving');
+      document.documentElement.classList.add('arriving');
+    }
+  } catch { /* private mode: no fade, just the dashboard */ }
+</script>
 <style>
 /* Deep space: black, a 3D galaxy that follows scroll (galaxy.js), Lora + DM Mono. */
 :root{
@@ -46,6 +58,13 @@ body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:col
 .veil{position:fixed;inset:0;z-index:1;pointer-events:none;
   background:radial-gradient(130% 95% at 50% 45%,transparent 55%,rgba(0,0,0,.45) 100%)}
 .veil::after{content:"";position:absolute;inset:0;background:#000;opacity:calc(var(--sp,0) * .18)}
+/* Arriving from the sign-in: the galaxy is already there, in the same place the login page had
+   it, so nothing covers it — only the page content arrives over the top. The bridge is the one
+   still frame the login page handed over, holding the picture until WebGL has drawn. */
+.bridge{position:fixed;inset:0;z-index:1;pointer-events:none;background:#000 center/cover no-repeat;
+  transition:opacity .35s linear}
+.wrap{transition:opacity .7s cubic-bezier(.4,0,.2,1) .15s}
+html.arriving .wrap{opacity:0}
 
 /* install: beside the search; app.js shows it only when the browser can install the page */
 .install{flex:none;min-height:54px;padding:0 22px;border-radius:999px;border:1px solid var(--line2);background:rgba(255,255,255,.04);
@@ -171,6 +190,10 @@ body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:col
 
 .empty{margin:28px 0 0;text-align:center;font-style:italic;color:var(--muted)}
 
+.who{margin-left:16px}
+.who button{margin-left:10px;padding:0;border:0;background:none;cursor:pointer;color:var(--muted);
+  font:inherit;letter-spacing:inherit;text-transform:inherit;text-decoration:underline;text-underline-offset:3px}
+.who button:hover{color:var(--text)}
 .foot{position:relative;z-index:2;padding:22px calc(18px + var(--safe-r)) calc(22px + var(--safe-b)) calc(18px + var(--safe-l));
   text-align:center;font:400 10.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
 
@@ -203,6 +226,7 @@ body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:col
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .cue i::after,.status[data-s="checking"] .dot,.ico{animation:none}
+  .wrap{transition-duration:.2s}
   .tile,.ico,.info,.info > *{transition:opacity .2s}
   .tile.on .ico{scale:1}
 }
@@ -210,6 +234,22 @@ body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:col
 </head>
 <body>
 <div class="space" aria-hidden="true"><canvas id="galaxy"></canvas></div>
+<div class="bridge" id="bridge" aria-hidden="true"></div>
+<script>
+  // The login page hands over one frame of its galaxy. Painting it here, while the document
+  // is still parsing, means this page opens on the galaxy instead of on an empty frame or two
+  // while WebGL starts up. galaxy.js fades it out the moment it has drawn for real.
+  (() => {
+    const el = document.getElementById('bridge');
+    let frame = '';
+    try {
+      frame = sessionStorage.getItem('unisis-galaxy-frame') || '';
+      sessionStorage.removeItem('unisis-galaxy-frame');
+    } catch { /* private mode: nothing was handed over */ }
+    if (frame) el.style.backgroundImage = `url(${frame})`;
+    else el.remove();
+  })();
+</script>
 <div class="veil" aria-hidden="true"></div>
 
 <main class="wrap">
@@ -237,7 +277,7 @@ body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:col
   <p class="empty" id="empty" hidden></p>
 </main>
 
-<footer class="foot">Bookends Pvt Ltd · Surat &amp; Ahmedabad</footer>
+<footer class="foot">Bookends Pvt Ltd · Surat &amp; Ahmedabad<span class="who" id="who" hidden></span></footer>
 
 <div class="sheet" id="iosSheet" role="dialog" aria-labelledby="iosTitle" hidden>
   <h2 id="iosTitle">Add to Home Screen</h2>
@@ -245,6 +285,15 @@ body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:col
   <button type="button" id="iosClose">Got it</button>
 </div>
 
+<script>
+  // Two frames guarantee the galaxy has actually been painted; then a short beat with only
+  // the galaxy on screen, and the page content comes up over it.
+  if (document.documentElement.classList.contains('arriving')) {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      setTimeout(() => document.documentElement.classList.remove('arriving'), 220);
+    }));
+  }
+</script>
 <script src="apps.js"></script>
 <script src="app.js"></script>
 <script src="galaxy.js"></script>

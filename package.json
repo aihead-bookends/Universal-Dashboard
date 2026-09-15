@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "build:icons": "node tools/build-icons.js"
+    "build:icons": "node tools/build-icons.js",
+    "user": "node tools/user.js"
   },
   "engines": {
     "node": ">=18"

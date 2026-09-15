@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Maskable version: the same mark as icon.svg, kept inside the central 80% circle, on a dark
+       ground so Android can crop it to a circle or squircle without cutting the mark. -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#1A1A20"/>
+      <stop offset="1" stop-color="#000000"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#glow)"/>
+  <g fill="#D8A94A" transform="translate(0 27) skewY(-6)">
+    <path d="M130 156 198 110 198 402 130 356Z"/>
+    <path d="M224 92 256 70 288 92 288 420 256 442 224 420Z"/>
+    <path d="M314 110 382 156 382 356 314 402Z"/>
+  </g>
+</svg>
