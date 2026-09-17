@@ -5,8 +5,8 @@
 <meta charset="utf-8">
 <!-- viewport-fit=cover paints under the notch; the safe-area insets below pad around it. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F2F2F0">
 <meta name="description" content="One place to open every Bookends app.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,10 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script>
-  // Arriving from the sign-in? Hold the page content back a beat so the galaxy is what greets
-  // you. The login page also hands over one frame of its galaxy as an image: painting that
-  // first means this page opens on the galaxy rather than on an empty frame or two while
-  // WebGL starts. galaxy.js drops it as soon as it has drawn.
+  // Arriving from the sign-in? Hold the page content back a beat, then let it come up.
   try {
     if (sessionStorage.getItem('unisis-arriving')) {
       sessionStorage.removeItem('unisis-arriving');
@@ -32,11 +29,12 @@
   } catch { /* private mode: no fade, just the dashboard */ }
 </script>
 <style>
-/* Deep space: black, a 3D galaxy that follows scroll (galaxy.js), Lora + DM Mono. */
+/* A light studio backdrop: white at the top, falling off to soft grey at the edges. Lora + DM Mono. */
 :root{
-  --text:#F3F1EC;--dim:rgba(243,241,236,.68);--muted:rgba(243,241,236,.46);--faint:rgba(243,241,236,.24);
-  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);
-  --gold:#E8B94A;--ok:#7BD88F;--warn:#E8A33D;
+  --text:#1C1C1F;--dim:#3A3A3F;--muted:#47474C;--faint:#4B4B50;
+  --line:rgba(28,28,31,.1);--line2:rgba(28,28,31,.18);
+  --gold:#E8B94A;--ok:#2F9E55;--warn:#A8650F;
+  --paper:#ECECEA;
   --serif:'Lora',Georgia,'Times New Roman',serif;
   --mono:'DM Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --ease:cubic-bezier(.16,1,.3,1);
@@ -45,37 +43,31 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html{background:#000;scroll-behavior:smooth}
-/* The galaxy runs to the edges of the window, and a scrollbar cuts a grey stripe through it.
+html{background:var(--paper);scroll-behavior:smooth}
+/* The background runs to the edges of the window, and a scrollbar cuts a grey stripe through it.
    Hidden, not disabled: the wheel, touch, keyboard and the scroll-driven logo flights all work
    exactly as before, and the cue under the headline says there is more below. */
 html{scrollbar-width:none}
 html::-webkit-scrollbar{width:0;height:0}
 body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;
-  background:#000;color:var(--text);font-family:var(--serif);-webkit-font-smoothing:antialiased}
+  background:var(--paper);color:var(--text);font-family:var(--serif);-webkit-font-smoothing:antialiased}
 
-/* space: the WebGL canvas covers this; the gradient only shows without WebGL */
-.space{position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(45% 40% at 72% 32%,rgba(232,185,74,.12),transparent 70%),
-    radial-gradient(60% 55% at 30% 80%,rgba(110,120,255,.10),transparent 70%),#000}
-.space canvas{display:block;width:100%;height:100%}
-/* edges fall off to black, and the field dims a little as you scroll into the apps */
-.veil{position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:radial-gradient(130% 95% at 50% 45%,transparent 55%,rgba(0,0,0,.45) 100%)}
-.veil::after{content:"";position:absolute;inset:0;background:#000;opacity:calc(var(--sp,0) * .18)}
-/* Arriving from the sign-in: the galaxy is already there, in the same place the login page had
-   it, so nothing covers it — only the page content arrives over the top. The bridge is the one
-   still frame the login page handed over, holding the picture until WebGL has drawn. */
-.bridge{position:fixed;inset:0;z-index:1;pointer-events:none;background:#000 center/cover no-repeat;
-  transition:opacity .35s linear}
+/* The background: a seamless studio sweep — bright white at the top centre, where the light is,
+   falling off to soft grey toward the edges and furthest into the bottom corners. No texture.
+   Plain CSS on a fixed layer, so it paints once and the page scrolls over it, the way a backdrop
+   stays put behind a subject. The login page uses exactly the same layer. */
+.space{position:fixed;inset:0;z-index:0;pointer-events:none;background-color:var(--paper);
+  background-image:radial-gradient(ellipse 80% 62% at 50% -6%,#FFFFFF 0%,rgba(255,255,255,0) 72%),
+    radial-gradient(ellipse 135% 108% at 50% 8%,#F8F8F7 0%,#EBEBE9 40%,#D6D6D3 72%,#C1C1BE 100%)}
+/* Arriving from the sign-in: only the page content arrives, over the same background. */
 .wrap{transition:opacity .7s cubic-bezier(.4,0,.2,1) .15s}
 html.arriving .wrap{opacity:0}
 
 /* install: beside the search; app.js shows it only when the browser can install the page */
-.install{flex:none;min-height:54px;padding:0 22px;border-radius:999px;border:1px solid var(--line2);background:rgba(255,255,255,.04);
+.install{flex:none;min-height:54px;padding:0 22px;border-radius:999px;border:1px solid var(--line2);background:rgba(255,255,255,.7);
   color:var(--text);font:500 10.5px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;cursor:pointer;
   transition:background-color .4s var(--ease),border-color .4s var(--ease)}
-.install:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.32)}
+.install:hover{background:#fff;border-color:rgba(28,28,31,.3);box-shadow:0 12px 26px -16px rgba(28,28,31,.45)}
 .install:focus-visible{outline:1px solid var(--text);outline-offset:3px}
 
 /* page */
@@ -83,23 +75,23 @@ html.arriving .wrap{opacity:0}
 .wrap{position:relative;z-index:2;flex:1;width:100%;margin:0;
   padding:0 calc(clamp(24px,5vw,96px) + var(--safe-r)) 24px calc(clamp(24px,5vw,96px) + var(--safe-l))}
 
-/* hero: nearly a full screen, so the galaxy has room before the apps */
+/* hero: nearly a full screen before the apps */
 .hero{min-height:92svh;display:flex;flex-direction:column;justify-content:flex-end;padding:calc(48px + var(--safe-t)) 0 clamp(36px,8vh,88px)}
 .eyebrow{margin:0;font:400 11px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
 .eyebrow span{white-space:nowrap}
 .title{margin:18px 0 0;font-size:clamp(44px,8.4vw,96px);font-weight:600;line-height:.98;letter-spacing:-.02em}
 .title em{padding-right:.06em;color:var(--gold);
-  background:linear-gradient(100deg,#F7DE9A 0%,#E8B94A 45%,#F3F1EC 115%);
+  background:linear-gradient(100deg,#8C6A18 0%,#A87D1C 45%,#6A5118 115%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .lede{margin:18px 0 0;max-width:46ch;font-size:clamp(16px,1.7vw,19px);line-height:1.5;font-style:italic;color:var(--dim)}
 
 .tools{margin-top:clamp(28px,5vh,44px);display:flex;align-items:center;gap:18px}
 .search{position:relative;flex:1;max-width:460px;display:flex;align-items:center;height:54px;padding:0 12px 0 48px;
-  border:1px solid var(--line2);border-radius:999px;background:rgba(10,10,14,.5);
+  border:1px solid var(--line2);border-radius:999px;background:rgba(255,255,255,.72);
   -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
   transition:border-color .5s var(--ease),background-color .5s var(--ease),box-shadow .5s var(--ease)}
-.search:focus-within{border-color:rgba(255,255,255,.38);background-color:rgba(14,14,20,.72);
-  box-shadow:0 0 0 6px rgba(255,255,255,.04),0 20px 60px -20px rgba(232,185,74,.3)}
+.search:focus-within{border-color:rgba(28,28,31,.34);background-color:#fff;
+  box-shadow:0 0 0 6px rgba(28,28,31,.05),0 18px 40px -22px rgba(28,28,31,.4)}
 .search svg{position:absolute;left:19px;width:18px;height:18px;color:var(--muted)}
 /* 16px: anything smaller makes iOS Safari zoom the page on focus. */
 .search input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;color:var(--text);font:16px var(--serif)}
@@ -115,7 +107,7 @@ html.arriving .wrap{opacity:0}
 @keyframes fall{to{top:100%}}
 .cue:hover{color:var(--text)}
 
-.notice{margin:0 0 18px;padding:12px 18px;border:1px solid rgba(232,163,61,.3);border-radius:14px;background:rgba(232,163,61,.08);
+.notice{margin:0 0 18px;padding:12px 18px;border:1px solid rgba(168,101,15,.3);border-radius:14px;background:rgba(232,163,61,.14);
   color:var(--warn);font:12.5px/1.45 var(--mono)}
 
 .section{margin:0;display:flex;align-items:center;gap:16px;scroll-margin-top:32px;
@@ -126,47 +118,78 @@ html.arriving .wrap{opacity:0}
    on hover, on keyboard focus, or when scrolling brings it to the middle (app.js sets .on). */
 /* logos sit about a quarter-screen apart, more than one flight's scroll (app.js), so they arrive one at a time */
 .list{counter-reset:app;display:flex;flex-direction:column;gap:clamp(120px,26vh,260px);padding:36px 0 30vh}
-.tile{--ac:var(--gold);--o:0%;counter-increment:app;position:relative;display:flex;align-items:center;gap:40px;
+/* --ac is the app's own colour. On a light page it is pulled toward charcoal: --aci for icons and
+   rings (at least 3:1), --acd for small text (at least 4.5:1 on the card). The shares are set by the
+   lightest accent, Mise's lime, so every app clears both. */
+.tile{--ac:var(--gold);--aci:color-mix(in srgb,var(--ac) 64%,#1C1C1F);--acd:color-mix(in srgb,var(--ac) 48%,#1C1C1F);--o:0%;counter-increment:app;position:relative;display:flex;align-items:center;gap:40px;
   padding:0 calc(4% + var(--o));color:var(--text);text-decoration:none;outline:none;
   pointer-events:none;-webkit-tap-highlight-color:transparent}
 .tile.flip{flex-direction:row-reverse;text-align:right}
-/* app.js flies each logo out of the galaxy as its place scrolls into view; mid-flight it can't be pointed at */
+/* One studio light for the whole page, overhead and a touch to the left: each logo sits on the
+   backdrop with a soft grey shadow grounded beneath it, stretched a little to the right, and its
+   card, while open, floats just above the same surface with a shadow of its own falling the same
+   way. Soft and grey, never black. app.js moves the light with the scroll through --sx/--sy
+   (throw), --ss (spread) and --so (strength): in the middle of the screen a shadow tucks in close
+   and crisp, and away from it it spreads and fades, as if leaving the spotlight. The blur is drawn
+   once; only transform and opacity change after that, and a blurred shape scaled up reads softer. */
+.orb{position:relative;flex:none;display:grid}
+.panel{position:relative;flex:0 1 auto;min-width:0;max-width:430px}
+.cast{position:absolute;pointer-events:none;will-change:transform,opacity;
+  transition:opacity .6s var(--ease),transform .45s var(--ease)}
+/* the logo's: a flattened ellipse at its foot, wider than it is tall, nudged the way the light falls */
+.orb .cast{inset:9px;border-radius:50%;background:#1C1C1F;filter:blur(9px);
+  transform:translate3d(calc(var(--ex,0px) + var(--sx,3px)),calc(var(--ey,0px) + 52% + var(--sy,7px)),0)
+    scale(calc(var(--es,1) * var(--ss,1) * 1.12),calc(var(--es,1) * var(--ss,1) * .4));
+  opacity:calc(var(--eo,1) * var(--so,.8) * .3)}
+.tile.on .orb .cast,.tile:focus-visible .orb .cast{opacity:calc(var(--eo,1) * var(--so,.8) * .38)}
+/* in flight the shadow travels with the logo frame by frame, so it must not lag behind it */
+.tile.flying .orb .cast{transition:none}
+/* the card's: a soft block just inside its edges, dropped a little further than the logo's, so the
+   card reads as floating just above the surface. It only appears while the card is open. */
+.cast-card{inset:10px 14px;border-radius:18px;background:#1C1C1F;filter:blur(20px);
+  transform:translate3d(calc(var(--sx,3px) * 1.8),calc(16px + var(--sy,7px) * 1.8),0) scale(var(--ss,1));opacity:0}
+.tile.on .cast-card,.tile:focus-visible .cast-card{opacity:calc(var(--so,.8) * .22)}
+.tile.off .cast{display:none}
+
+/* app.js flies each logo into place as its spot scrolls into view; mid-flight it can't be pointed at */
 .tile.flying .ico{pointer-events:none}
 
 /* logos: a clean line icon in a soft tint of its app's colour, inside a lightly tinted glass circle.
    Open (hover, scroll, focus) it brightens to full colour and one thin ring eases out around it. */
 .ico{position:relative;flex:none;width:84px;height:84px;border-radius:50%;display:grid;place-items:center;pointer-events:auto;
-  color:color-mix(in srgb,var(--ac) 60%,#F3F1EC);
-  background:radial-gradient(circle at 50% 30%,color-mix(in srgb,var(--ac) 16%,rgba(12,12,16,.6)),rgba(4,4,8,.72) 72%);
-  border:1px solid color-mix(in srgb,var(--ac) 40%,rgba(255,255,255,.14));
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-  box-shadow:0 0 28px -10px color-mix(in srgb,var(--ac) 55%,transparent),inset 0 1px 0 rgba(255,255,255,.06);
+  color:var(--aci);
+  /* lit from above: brightest at the top left, a little shade gathering underneath */
+  background:radial-gradient(circle at 38% 24%,#FFFFFF 0%,color-mix(in srgb,var(--ac) 5%,#F7F7F5) 46%,color-mix(in srgb,var(--ac) 7%,#E2E2DF) 100%);
+  border:1px solid rgba(28,28,31,.09);
+  box-shadow:inset 0 1px 0 #fff,inset 0 -4px 10px rgba(28,28,31,.07),0 1px 2px rgba(28,28,31,.12);
   animation:float 9s ease-in-out infinite;animation-delay:calc(var(--i,0) * -1.1s);
-  /* the flight out of the galaxy (app.js): --ex/--ey offset from its place, --es size, --eo fade */
+  /* the flight into place (app.js): --ex/--ey offset from its place, --es size, --eo fade */
   transform:translate3d(var(--ex,0px),var(--ey,0px),0) scale(var(--es,1));opacity:var(--eo,1);
   transition:color .5s var(--ease),border-color .5s var(--ease),box-shadow .6s var(--ease),scale .7s var(--ease)}
-.ico svg{width:34px;height:34px;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--ac) 45%,transparent))}
+.ico svg{width:34px;height:34px}
 @keyframes float{50%{translate:0 -4px}}
 /* one thin ring eases out around a logo while it is open */
-.ico::before{content:"";position:absolute;inset:-9px;border-radius:50%;border:1px solid color-mix(in srgb,var(--ac) 50%,transparent);
+.ico::before{content:"";position:absolute;inset:-9px;border-radius:50%;border:1px solid color-mix(in srgb,var(--aci) 55%,transparent);
   pointer-events:none;opacity:0;scale:.9;transition:opacity .6s var(--ease),scale .8s var(--ease)}
-.tile.on .ico,.tile:focus-visible .ico{color:var(--ac);border-color:color-mix(in srgb,var(--ac) 75%,transparent);
-  box-shadow:0 0 44px -8px color-mix(in srgb,var(--ac) 75%,transparent),inset 0 1px 0 rgba(255,255,255,.08);scale:1.06}
+.tile.on .ico,.tile:focus-visible .ico{color:var(--aci);border-color:color-mix(in srgb,var(--aci) 40%,rgba(28,28,31,.1));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -4px 10px rgba(28,28,31,.06),0 0 0 4px color-mix(in srgb,var(--ac) 16%,transparent);scale:1.06}
 .tile.on .ico::before,.tile:focus-visible .ico::before{opacity:1;scale:1}
 
-/* no box: just the text over the galaxy, with a soft dark halo so it stays readable on bright stars */
-.info{position:relative;min-width:0;max-width:430px;padding:4px 0 4px 18px;border-left:1px solid color-mix(in srgb,var(--ac) 40%,transparent);
-  text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 12px rgba(0,0,0,.9),0 0 28px rgba(0,0,0,.8);
+/* a card: a near-white surface just above the backdrop, edged in the app's colour on the logo's side */
+.info{position:relative;min-width:0;max-width:430px;padding:14px 22px 12px 20px;border-radius:16px;
+  background:rgba(255,255,255,.86);border:1px solid rgba(28,28,31,.07);border-left:2px solid var(--aci);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   /* the wipe's clip reaches 30px past the text, so glyphs and their halo are never cut */
   opacity:0;clip-path:inset(-30px 100% -30px -30px);translate:-14px 0;pointer-events:none;
   transition:opacity .4s var(--ease),clip-path .75s var(--ease),translate .75s var(--ease)}
-.tile.flip .info{padding:4px 18px 4px 0;border-left:0;border-right:1px solid color-mix(in srgb,var(--ac) 40%,transparent);
+.tile.flip .info{padding:14px 20px 12px 22px;border-left:1px solid rgba(28,28,31,.07);border-right:2px solid var(--aci);
   clip-path:inset(-30px -30px -30px 100%);translate:14px 0}
 .tile.on .info,.tile:focus-visible .info{opacity:1;clip-path:inset(-30px);translate:0 0;pointer-events:auto}
-.info::before{content:"SYS " counter(app,decimal-leading-zero);display:block;margin-bottom:6px;font:400 10.5px var(--mono);letter-spacing:.22em;color:var(--ac)}
+.info::before{content:"SYS " counter(app,decimal-leading-zero);display:block;margin-bottom:6px;font:400 10.5px var(--mono);letter-spacing:.22em;color:var(--acd)}
 .tile.on .info::after{content:"";position:absolute;left:0;right:0;top:0;height:100%;pointer-events:none;
-  background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--ac) 20%,transparent),transparent);animation:scan .9s var(--ease) 1}
-@keyframes scan{from{transform:translateY(-105%)}to{transform:translateY(105%)}}
+  border-radius:inherit;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--ac) 14%,transparent),transparent);animation:scan .9s var(--ease) 1 forwards}
+/* the sweep fades as it leaves, so nothing of it is left sitting in the clip margin afterwards */
+@keyframes scan{from{transform:translateY(-105%);opacity:1}70%{opacity:1}to{transform:translateY(105%);opacity:0}}
 .info > *{opacity:0;translate:0 8px;transition:opacity .5s var(--ease),translate .6s var(--ease)}
 .tile.on .info > *,.tile:focus-visible .info > *{opacity:1;translate:0 0}
 .tile.on .info > :nth-child(2),.tile:focus-visible .info > :nth-child(2){transition-delay:.06s}
@@ -174,22 +197,22 @@ html.arriving .wrap{opacity:0}
 .tile.on .info > :nth-child(4),.tile:focus-visible .info > :nth-child(4){transition-delay:.18s}
 
 .name{margin:0;font-size:clamp(22px,2.6vw,28px);font-weight:600;line-height:1.1;letter-spacing:-.01em}
-.tag{margin:6px 0 0;font:400 10.5px var(--mono);letter-spacing:.22em;text-transform:uppercase;color:color-mix(in srgb,var(--ac) 75%,#F3F1EC)}
-.desc{margin:10px 0 0;font:400 11.5px/1.65 var(--mono);letter-spacing:.01em;color:rgba(243,241,236,.78)}
-.meta{margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:space-between;gap:18px;
+.tag{margin:6px 0 0;font:400 10.5px var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--acd)}
+.desc{margin:10px 0 0;font:400 11.5px/1.65 var(--mono);letter-spacing:.01em;color:var(--dim)}
+.meta{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:18px;
   font:400 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .tile.flip .meta{flex-direction:row-reverse}
 .status{display:inline-flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .label{overflow:hidden;text-overflow:ellipsis}
 .dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--faint)}
-.status[data-s="online"] .dot{background:var(--ok);box-shadow:0 0 10px rgba(123,216,143,.6)}
+.status[data-s="online"] .dot{background:var(--ok);box-shadow:0 0 0 3px rgba(47,158,85,.16)}
 .status[data-s="down"] .dot{background:var(--warn)}
 .status[data-s="checking"] .dot{background:var(--text);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.2}}
-.go{flex:none;color:var(--ac);letter-spacing:.16em}
+.go{flex:none;color:var(--acd);letter-spacing:.16em}
 
 /* no address yet: visibly a slot, not a broken link */
-.tile.off .ico{color:var(--muted);border-style:dashed;border-color:var(--line2);background:rgba(0,0,0,.5);box-shadow:none}
+.tile.off .ico{color:var(--muted);border-style:dashed;border-color:var(--line2);background:rgba(255,255,255,.4);box-shadow:none}
 .tile.off .ico svg{filter:none}
 .tile.off .info::before{color:var(--muted)}
 
@@ -204,11 +227,11 @@ html.arriving .wrap{opacity:0}
 
 /* iOS has no install prompt; this sheet explains Add to Home Screen */
 .sheet{position:fixed;left:12px;right:12px;bottom:calc(12px + var(--safe-b));z-index:10;margin:0 auto;max-width:420px;
-  padding:20px 20px 16px;border:1px solid var(--line2);border-radius:22px;background:rgba(12,12,16,.9);
-  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 24px 70px rgba(0,0,0,.7)}
+  padding:20px 20px 16px;border:1px solid var(--line2);border-radius:22px;background:rgba(255,255,255,.94);
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 24px 60px -12px rgba(28,28,31,.28)}
 .sheet h2{margin:0;font-size:19px;font-weight:600}
 .sheet p{margin:8px 0 0;color:var(--dim);font-size:14px;line-height:1.55}
-.sheet button{margin-top:16px;width:100%;min-height:46px;border:0;border-radius:999px;background:var(--text);color:#000;
+.sheet button{margin-top:16px;width:100%;min-height:46px;border:0;border-radius:999px;background:var(--text);color:#fff;
   font:500 11.5px var(--mono);letter-spacing:.18em;text-transform:uppercase;cursor:pointer}
 
 /* phones: logos hug the edges, details take the rest of the line */
@@ -221,7 +244,9 @@ html.arriving .wrap{opacity:0}
   .tile{padding:0 4px;gap:28px}
   .ico{width:66px;height:66px}
   .ico svg{width:27px;height:27px}
-  .info{flex:1;max-width:none;padding:4px 2px}
+  .panel{flex:1;max-width:none}
+  .info{flex:1;max-width:none;padding:12px 16px 10px 14px}
+  .tile.flip .info{padding:12px 14px 10px 16px}
   .name{font-size:21px}
   .tag{font-size:9.5px;letter-spacing:.18em}
   .desc{font-size:10.5px;line-height:1.6}
@@ -232,30 +257,13 @@ html.arriving .wrap{opacity:0}
   html{scroll-behavior:auto}
   .cue i::after,.status[data-s="checking"] .dot,.ico{animation:none}
   .wrap{transition-duration:.2s}
-  .tile,.ico,.info,.info > *{transition:opacity .2s}
+  .tile,.ico,.info,.info > *,.cast{transition:opacity .2s}
   .tile.on .ico{scale:1}
 }
 </style>
 </head>
 <body>
-<div class="space" aria-hidden="true"><canvas id="galaxy"></canvas></div>
-<div class="bridge" id="bridge" aria-hidden="true"></div>
-<script>
-  // The login page hands over one frame of its galaxy. Painting it here, while the document
-  // is still parsing, means this page opens on the galaxy instead of on an empty frame or two
-  // while WebGL starts up. galaxy.js fades it out the moment it has drawn for real.
-  (() => {
-    const el = document.getElementById('bridge');
-    let frame = '';
-    try {
-      frame = sessionStorage.getItem('unisis-galaxy-frame') || '';
-      sessionStorage.removeItem('unisis-galaxy-frame');
-    } catch { /* private mode: nothing was handed over */ }
-    if (frame) el.style.backgroundImage = `url(${frame})`;
-    else el.remove();
-  })();
-</script>
-<div class="veil" aria-hidden="true"></div>
+<div class="space" aria-hidden="true"></div>
 
 <main class="wrap">
   <section class="hero">
@@ -291,8 +299,8 @@ html.arriving .wrap{opacity:0}
 </div>
 
 <script>
-  // Two frames guarantee the galaxy has actually been painted; then a short beat with only
-  // the galaxy on screen, and the page content comes up over it.
+  // Two frames guarantee the page has actually been painted; then a short beat, and the page
+  // content comes up.
   if (document.documentElement.classList.contains('arriving')) {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       setTimeout(() => document.documentElement.classList.remove('arriving'), 220);
@@ -301,6 +309,5 @@ html.arriving .wrap{opacity:0}
 </script>
 <script src="apps.js"></script>
 <script src="app.js"></script>
-<script src="galaxy.js"></script>
 </body>
 </html>

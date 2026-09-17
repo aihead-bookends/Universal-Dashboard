@@ -21,9 +21,9 @@ const auth = require('./auth.js');
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT) || 4000;
 
-const PUBLIC = new Set(['index.html', 'app.js', 'apps.js', 'galaxy.js', 'sw.js', 'manifest.webmanifest', 'login.html']);
-// Served before signing in: the login page, its backdrop, and the icons a browser asks for early.
-const OPEN = new Set(['login.html', 'galaxy.js', 'manifest.webmanifest']);
+const PUBLIC = new Set(['index.html', 'app.js', 'apps.js', 'sw.js', 'manifest.webmanifest', 'login.html']);
+// Served before signing in: the login page, and the icons a browser asks for early.
+const OPEN = new Set(['login.html', 'manifest.webmanifest']);
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',

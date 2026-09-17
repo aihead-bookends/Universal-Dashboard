@@ -4,8 +4,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F2F2F0">
 <meta name="robots" content="noindex">
 <title>Sign in · Bookends Universal Dashboard</title>
 <link rel="icon" href="icons/icon.svg?v=5" type="image/svg+xml">
@@ -13,14 +13,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* The dashboard's own galaxy runs behind this page — the same galaxy.js, the same camera it
-   uses at the top of the dashboard — with the sign-in set against it on the left. Signing in
-   clears the sign-in away and hands over to the dashboard, which opens on that same galaxy
-   still turning, so there is nothing to blink between. */
+/* The same studio backdrop as the dashboard — white at the top, soft grey at the edges — and
+   the sign-in set against it on the left. Both pages paint the identical layer, so signing in only
+   changes what sits on top of it. */
 :root{
-  --text:#F3F1EC;--dim:rgba(243,241,236,.68);--muted:rgba(243,241,236,.46);--faint:rgba(243,241,236,.24);
-  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.16);
-  --gold:#E8B94A;--warn:#E8A33D;
+  --text:#1C1C1F;--dim:#3A3A3F;--muted:#47474C;--faint:#4B4B50;
+  --line:rgba(28,28,31,.1);--line2:rgba(28,28,31,.18);
+  --gold:#E8B94A;--warn:#A8650F;
+  --paper:#ECECEA;
   --serif:'Lora',Georgia,'Times New Roman',serif;
   --mono:'DM Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --ease:cubic-bezier(.16,1,.3,1);
@@ -29,46 +29,43 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important} /* .or is display:flex, which would otherwise beat the attribute */
-html{background:#000}
+html{background:var(--paper)}
 body{margin:0;min-height:100svh;display:flex;flex-direction:column;justify-content:center;overflow-x:hidden;
-  background:#000;color:var(--text);font-family:var(--serif);-webkit-font-smoothing:antialiased;
+  background:var(--paper);color:var(--text);font-family:var(--serif);-webkit-font-smoothing:antialiased;
   padding:calc(40px + var(--safe-t)) calc(clamp(24px,5vw,96px) + var(--safe-r)) calc(40px + var(--safe-b))
     calc(clamp(24px,5vw,96px) + var(--safe-l))}
 
-/* the galaxy fills the screen; the gradient only shows without WebGL */
-.space{position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(45% 40% at 68% 38%,rgba(232,185,74,.12),transparent 70%),
-    radial-gradient(60% 55% at 28% 78%,rgba(110,120,255,.09),transparent 72%),#000}
-.space canvas{display:block;width:100%;height:100%}
-/* the edges fall off to black, so the words have something dark to sit against */
-.veil{position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:radial-gradient(125% 95% at 55% 45%,transparent 45%,rgba(0,0,0,.5) 100%)}
+/* The background: the same seamless studio sweep the dashboard uses — bright white at the top
+   centre, soft grey toward the edges and bottom corners, no texture. Plain CSS: it paints once. */
+.space{position:fixed;inset:0;z-index:0;pointer-events:none;background-color:var(--paper);
+  background-image:radial-gradient(ellipse 80% 62% at 50% -6%,#FFFFFF 0%,rgba(255,255,255,0) 72%),
+    radial-gradient(ellipse 135% 108% at 50% 8%,#F8F8F7 0%,#EBEBE9 40%,#D6D6D3 72%,#C1C1BE 100%)}
 
-/* the sign-in itself: no panel, just the words and the fields against the galaxy */
+/* the sign-in itself: no panel, just the words and the fields */
 main{position:relative;z-index:2;width:100%;max-width:440px;
   transition:opacity .55s var(--ease),transform .9s var(--ease),filter .6s var(--ease)}
-/* signing in: the sign-in clears, and the galaxy behind it carries on into the dashboard */
+/* signing in: the sign-in clears before the dashboard opens */
 body.jump main{opacity:0;transform:translateY(-12px);filter:blur(2px)}
 
 .eyebrow{margin:0;font:400 11px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
 h1{margin:18px 0 0;font-size:clamp(38px,5.4vw,64px);font-weight:600;line-height:1;letter-spacing:-.02em}
 h1 em{padding-right:.06em;font-style:italic;color:var(--gold);
-  background:linear-gradient(100deg,#F7DE9A 0%,#E8B94A 45%,#F3F1EC 115%);
+  background:linear-gradient(100deg,#8C6A18 0%,#A87D1C 45%,#6A5118 115%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .lede{margin:16px 0 0;font-size:16px;line-height:1.5;font-style:italic;color:var(--dim)}
 
 form{margin-top:clamp(28px,5vh,40px);display:flex;flex-direction:column;gap:14px}
 label{display:block;font:400 10.5px var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 input{width:100%;height:52px;padding:0 20px;border:1px solid var(--line2);border-radius:999px;
-  background:rgba(255,255,255,.05);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   color:var(--text);font:16px var(--serif);outline:0;
   transition:border-color .4s var(--ease),background-color .4s var(--ease),box-shadow .4s var(--ease)}
 input::placeholder{color:var(--muted);font-style:italic}
-input:focus{border-color:rgba(232,185,74,.55);background-color:rgba(255,255,255,.09);box-shadow:0 0 0 5px rgba(232,185,74,.10)}
-button{margin-top:6px;min-height:52px;border:0;border-radius:999px;cursor:pointer;background:var(--text);color:#000;
+input:focus{border-color:rgba(168,125,28,.6);background-color:#fff;box-shadow:0 0 0 5px rgba(232,185,74,.18)}
+button{margin-top:6px;min-height:52px;border:0;border-radius:999px;cursor:pointer;background:var(--text);color:#fff;
   font:500 11.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;
   transition:opacity .3s var(--ease),transform .5s var(--ease),box-shadow .5s var(--ease)}
-button:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+button:hover{transform:translateY(-1px);box-shadow:0 12px 26px -14px rgba(28,28,31,.55)}
 button[disabled]{opacity:.55;cursor:default;transform:none}
 .ways{margin-top:clamp(20px,3vh,28px);display:flex;flex-direction:column;gap:16px}
 #google{min-height:44px;color-scheme:light}
@@ -87,8 +84,7 @@ button[disabled]{opacity:.55;cursor:default;transform:none}
 </style>
 </head>
 <body>
-<div class="space" aria-hidden="true"><canvas id="galaxy"></canvas></div>
-<div class="veil" aria-hidden="true"></div>
+<div class="space" aria-hidden="true"></div>
 
 <main>
   <p class="eyebrow">Bookends · Universal Dashboard</p>
@@ -116,7 +112,6 @@ button[disabled]{opacity:.55;cursor:default;transform:none}
   <p class="foot">Bookends Pvt Ltd · Surat &amp; Ahmedabad</p>
 </main>
 
-<script src="galaxy.js"></script>
 <script>
 (() => {
   'use strict';
@@ -128,23 +123,15 @@ button[disabled]{opacity:.55;cursor:default;transform:none}
   const ways = document.getElementById('ways');
 
 
-  // Signing in is only the sign-in clearing. The galaxy behind it is the dashboard's own, at the
-  // dashboard's own camera, and it hands its clock over — so when the page turns over the same
-  // galaxy is there, in the same place, still turning. To keep even the swap from flashing, the
-  // dashboard is prepared in the background first and then swapped in already painted.
+  // Signing in clears the sign-in away. The dashboard is prepared in the background first, so the
+  // navigation is a swap rather than a load, and it opens on the same background.
   async function land() {
     try {
       sessionStorage.setItem('unisis-arriving', '1');
     } catch { /* private mode: the dashboard simply opens without the fade-in */ }
     prepareDashboard();
     document.body.classList.add('jump');
-    await new Promise((done) => setTimeout(done, 700));
-    // Hand the dashboard one frame of this galaxy, so its first paint is already the galaxy
-    // rather than an empty page while WebGL starts.
-    try {
-      const frame = window.UNISIS_GALAXY && window.UNISIS_GALAXY.snapshot();
-      if (frame) sessionStorage.setItem('unisis-galaxy-frame', frame);
-    } catch { /* no snapshot: the dashboard opens the ordinary way */ }
+    await new Promise((done) => setTimeout(done, 550));
     location.replace('./');
   }
 

@@ -72,13 +72,13 @@ Nobody sees the dashboard, the app list or the scripts without signing in, with 
 or with a name and password. Either way it sets a cookie that lasts 30 days, and the
 login page offers whichever of the two is set up.
 
-The login page runs the dashboard's own galaxy behind it — the same galaxy.js, at the same
-camera it uses at the top of the dashboard, pointer stirring included — with the sign-in set
-against it on the left. The galaxy hands its clock across in sessionStorage, so
-the arms carry on turning from where they were rather than snapping back to the start.
-Signing in clears the glass, and the dashboard is prerendered in the background first so the
-navigation is a swap rather than a load: the same galaxy is there, in the same place, with no
-blank frame in between.
+Both pages share one light studio backdrop: a seamless sweep from white at the top centre to
+soft grey at the edges, painted once in plain CSS on a fixed layer — no canvas, no animation — so
+it loads instantly and costs nothing while the dashboard scrolls. Each app logo sits on it with a
+soft grey shadow from a single overhead light, and its card floats above the same surface; the
+shadows tighten as a logo reaches the middle of the screen and spread and fade away from it. The sign-in sits against it on the left.
+Signing in clears the form, and the dashboard is prerendered in the background first so the
+navigation is a swap rather than a load.
 
 Add the first account, then start the server:
 

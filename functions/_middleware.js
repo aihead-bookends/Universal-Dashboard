@@ -7,7 +7,7 @@
 
 import { COOKIE, cookieValue, readSession } from './_auth.js';
 
-const OPEN = new Set(['/login', '/login.html', '/galaxy.js', '/manifest.webmanifest', '/favicon.ico']);
+const OPEN = new Set(['/login', '/login.html', '/manifest.webmanifest', '/favicon.ico']);
 const isIcon = (p) => /^\/icons\/[\w.-]+\.(png|svg)$/.test(p);
 
 export async function onRequest(context) {

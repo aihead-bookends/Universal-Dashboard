@@ -8,7 +8,7 @@
  *   tag     two or three words on what it is, shown above the description
  *   desc    the system line: what the app runs, in one sentence
  *   icon    cube | lens | rotate | tally | lock | send | cat | chart | grid
- *   accent  logo colour (hex); keep it bright, the logos sit on the galaxy
+ *   accent  logo colour (hex); keep it bright, the logos sit on a near-black background
  *   url     where OPEN goes. Either a full address, or a template where {host}
  *           is replaced by the machine the dashboard was opened from — so
  *           'http://{host}:3000' reaches an app running on the same PC, from

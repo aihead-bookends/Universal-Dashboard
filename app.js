@@ -66,7 +66,14 @@
     info.append(make('h2', 'name', app.name));
     if (app.tag) info.append(make('p', 'tag', app.tag));
     if (app.desc) info.append(make('p', 'desc', app.desc));
-    tile.append(ico, info);
+    // Each holds what it casts on the wall behind it: the logo its own soft light, the details
+    // theirs. The cast comes first, so it paints underneath. (It can't live inside .ico: that is
+    // its own stacking context, and anything in it would paint over the glass.)
+    const orb = make('span', 'orb');
+    orb.append(make('span', 'cast'), ico);
+    const panel = make('div', 'panel');
+    panel.append(make('span', 'cast cast-card'), info);
+    tile.append(orb, panel);
 
     const meta = make('div', 'meta');
     const status = make('span', 'status');
@@ -133,23 +140,51 @@
   }
 
   /* --------------------------------------------------------- emergence */
-  // As the page scrolls, each logo in turn rises out of the galaxy: it starts small among the stars
-  // near the core, arcs out to its place and stirs the stars it passes (galaxy.js). Scrolling back up
-  // sends it home again. Progress follows the scroll, eased so the flight glides between wheel steps.
+  // As the page scrolls, each logo in turn flies into place: it starts small near the middle of the
+  // screen and arcs out to its spot. Scrolling back up sends it back again. Progress follows the scroll, eased so the flight glides between wheel steps.
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const flights = tiles.map(({ tile }, i) => ({
     tile,
-    ico: tile.firstChild,
+    orb: tile.firstChild,
     shown: still ? 1 : 0,
-    // Where among the stars it starts, around the core: a golden-angle spread, so no two share a spot.
+    // Where it starts, around the middle of the screen: a golden-angle spread, so no two share a spot.
     angle: i * 2.39996,
     reach: 0.08 + 0.2 * ((i * 0.618034) % 1),
-    x: NaN,
-    y: NaN,
     landed: false,
+    light: '', // the shadow values last written, so an unchanged frame writes nothing
   }));
   const flightOf = new Map(flights.map((f) => [f.tile, f]));
   const landed = (tile) => flightOf.get(tile).shown > 0.97;
+
+  // One studio light for the whole page, overhead and a touch to the left, so every shadow falls
+  // beneath its logo and leans a little to the right. It follows the scroll: a logo in the middle
+  // of the screen has its shadow tucked in close and crisp, the light focused on it; toward the top
+  // or bottom the shadow stretches, swings a little and softens, as if leaving the spotlight. Worked out from the positions the flight
+  // loop has just read, so it costs no extra layout, and rounded so that most frames of a scroll
+  // change nothing visible and write nothing at all.
+  function light(slots, H) {
+    flights.forEach((f, i) => {
+      const slot = slots[i];
+      if (!slot) return;
+      const d = Math.max(-1.3, Math.min(1.3, (slot[1] - H / 2) / (H / 2))); // -1 top edge, 1 bottom
+      if (Math.abs(d) >= 1.3 && f.light) return; // well off screen: leave it as it was
+      const far = Math.abs(d);
+      const turn = ((70 + d * 10) * Math.PI) / 180; // 90deg would be straight down; less leans right
+      const reach = 5 + 16 * far;
+      const sx = Math.round(Math.cos(turn) * reach);
+      const sy = Math.round(Math.sin(turn) * reach);
+      const ss = (Math.round((1 + 0.5 * far) * 20) / 20).toFixed(2);  // spread: bigger reads softer
+      const so = (Math.round((1 - 0.5 * Math.min(far, 1)) * 20) / 20).toFixed(2); // strength
+      const key = `${sx} ${sy} ${ss} ${so}`;
+      if (key === f.light) return;
+      f.light = key;
+      const ts = f.tile.style;
+      ts.setProperty('--sx', `${sx}px`);
+      ts.setProperty('--sy', `${sy}px`);
+      ts.setProperty('--ss', ss);
+      ts.setProperty('--so', so);
+    });
+  }
 
   let lastFlight = performance.now();
   function fly(now) {
@@ -157,15 +192,15 @@
     lastFlight = now;
     const W = innerWidth;
     const H = innerHeight;
-    const galaxy = window.UNISIS_GALAXY;
-    const [coreX, coreY] = galaxy ? galaxy.core() : [W / 2, H / 2];
+    const [coreX, coreY] = [W / 2, H / 2];
     const glide = still ? 1 : 1 - Math.exp(-dt / 0.22);
     // Read every logo's resting place first, then write, so the page is laid out once per frame.
     const slots = flights.map((f) => {
       if (f.tile.hidden) return null;
       const box = f.tile.getBoundingClientRect();
-      return [box.left + f.ico.offsetLeft + f.ico.offsetWidth / 2, box.top + f.ico.offsetTop + f.ico.offsetHeight / 2];
+      return [box.left + f.orb.offsetLeft + f.orb.offsetWidth / 2, box.top + f.orb.offsetTop + f.orb.offsetHeight / 2];
     });
+    light(slots, H);
     // At the foot of the page nothing can scroll higher, so every logo on screen finishes its flight.
     const atBottom = scrollY >= document.documentElement.scrollHeight - H - 2;
     let justLanded = false;
@@ -176,13 +211,12 @@
       // the gap between logos (index.html), so each one lands before the next sets off.
       const target = still || (atBottom && slot[1] < H) ? 1 : Math.min(1, Math.max(0, (H * 0.96 - slot[1]) / (H * 0.24)));
       f.shown += (target - f.shown) * glide;
-      const st = f.ico.style;
+      const st = f.orb.style;
       if (target === 1 && f.shown > 0.995) { // by here the flight is within a fraction of a pixel of home
         if (!f.landed) {
           ['--ex', '--ey', '--es', '--eo'].forEach((name) => st.removeProperty(name));
           f.tile.classList.remove('flying');
           f.landed = true;
-          f.x = f.y = NaN;
           justLanded = true;
         }
         return;
@@ -205,14 +239,6 @@
       st.setProperty('--ey', `${(y - slot[1]).toFixed(1)}px`);
       st.setProperty('--es', (0.18 + 0.82 * e).toFixed(3));
       st.setProperty('--eo', Math.min(1, p / 0.3).toFixed(3));
-      // Stir the stars it flies through: strongest mid-flight, nothing once it has landed.
-      if (galaxy && p > 0.01 && p < 0.99 && !Number.isNaN(f.x)) {
-        const mx = x - f.x;
-        const my = y - f.y;
-        if (Math.abs(mx) + Math.abs(my) > 0.3) galaxy.stir(x, y, mx, my, Math.sin(Math.PI * p));
-      }
-      f.x = x;
-      f.y = y;
     });
     // A logo that lands in the middle of the screen opens, as if the scroll had just brought it there.
     if (justLanded) focusMiddle();
