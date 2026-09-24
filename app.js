@@ -370,8 +370,14 @@
     try {
       const res = await fetch("api/me", { headers: { Accept: "application/json" } });
       if (!res.ok) return;
-      const { name } = await res.json();
-      who.append(`Signed in as ${name}`);
+      const { name, role } = await res.json();
+      // A shared word signs in as the role itself, so "reader (reader)" would read oddly.
+      who.append(name === role ? `Signed in with the ${role} word` : `Signed in as ${name} (${role})`);
+      if (role === "superadmin") {
+        const manage = make("a", "", "Access");
+        manage.href = "admin";
+        who.append(manage);
+      }
       const out = make("button", "", "Sign out");
       out.type = "button";
       out.addEventListener("click", async () => {

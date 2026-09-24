@@ -1,0 +1,353 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F2F2F0">
+<meta name="robots" content="noindex">
+<title>Access · Bookends Universal Dashboard</title>
+<link rel="icon" href="icons/icon.svg?v=5" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* The console: who may open the dashboard, and how much of it they see. Superadmins only —
+   the server refuses this page to anyone else, and refuses every call behind it. Same studio
+   backdrop and type as the rest. */
+:root{
+  --text:#1C1C1F;--dim:#3A3A3F;--muted:#47474C;--faint:#4B4B50;
+  --line:rgba(28,28,31,.1);--line2:rgba(28,28,31,.18);
+  --gold:#A87D1C;--warn:#A8650F;--ok:#2F9E55;--paper:#ECECEA;
+  --serif:'Lora',Georgia,'Times New Roman',serif;
+  --mono:'DM Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --safe-r:env(safe-area-inset-right,0px);--safe-l:env(safe-area-inset-left,0px);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--paper)}
+body{margin:0;min-height:100svh;background:var(--paper);color:var(--text);font-family:var(--serif);
+  -webkit-font-smoothing:antialiased;
+  padding:40px calc(clamp(20px,4vw,72px) + var(--safe-r)) 80px calc(clamp(20px,4vw,72px) + var(--safe-l))}
+.space{position:fixed;inset:0;z-index:0;pointer-events:none;background-color:var(--paper);
+  background-image:radial-gradient(ellipse 80% 62% at 50% -6%,#FFFFFF 0%,rgba(255,255,255,0) 72%),
+    radial-gradient(ellipse 135% 108% at 50% 8%,#F8F8F7 0%,#EBEBE9 40%,#D6D6D3 72%,#C1C1BE 100%)}
+main{position:relative;z-index:1;max-width:980px;margin:0 auto}
+
+.eyebrow{margin:0;font:400 11px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+h1{margin:12px 0 0;font-size:clamp(30px,4vw,44px);font-weight:600;letter-spacing:-.02em}
+h1 em{font-style:italic;color:var(--gold)}
+.lede{margin:12px 0 0;font-size:15.5px;line-height:1.6;font-style:italic;color:var(--dim);max-width:62ch}
+.back{margin-top:18px;display:inline-block;font:400 10.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.back:hover{color:var(--text)}
+
+section{margin-top:clamp(26px,4vh,40px);padding:22px 24px 24px;border-radius:16px;
+  background:rgba(255,255,255,.86);border:1px solid rgba(28,28,31,.07);
+  box-shadow:0 14px 30px -24px rgba(28,28,31,.5)}
+h2{margin:0;font:400 10.5px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+.hint{margin:8px 0 0;font:400 11.5px/1.6 var(--mono);color:var(--dim)}
+
+table{width:100%;margin-top:16px;border-collapse:collapse;font:400 12.5px var(--mono)}
+th{text-align:left;font-weight:400;letter-spacing:.16em;text-transform:uppercase;font-size:10px;color:var(--muted);
+  padding:0 10px 8px 0;border-bottom:1px solid var(--line)}
+td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.name{font-family:var(--serif);font-size:15px}
+.tagrole{display:inline-block;padding:3px 10px;border-radius:999px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  border:1px solid var(--line2);color:var(--dim)}
+.tagrole[data-r="superadmin"]{border-color:rgba(168,125,28,.5);color:#7A5A12;background:rgba(232,185,74,.16)}
+.tagrole[data-r="admin"]{border-color:rgba(47,158,85,.4);color:#22713D;background:rgba(47,158,85,.12)}
+/* one person's exceptions, folded out under their row */
+tr.own td{padding-top:0}
+.own .box{margin:2px 0 10px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:rgba(28,28,31,.03)}
+.own h3{margin:0 0 10px;font:400 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.own .app{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:5px 0}
+.own .app span{font-family:var(--serif);font-size:14px}
+.own select{height:34px}
+.exception{margin-left:8px;font-size:10px;color:var(--muted)}
+
+input,select{height:40px;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:#fff;
+  color:var(--text);font:13px var(--mono);outline:0}
+input:focus,select:focus{border-color:rgba(168,125,28,.6);box-shadow:0 0 0 4px rgba(232,185,74,.18)}
+button{min-height:40px;padding:0 16px;border:0;border-radius:10px;cursor:pointer;background:var(--text);color:#fff;
+  font:500 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase}
+button:hover{box-shadow:0 10px 22px -14px rgba(28,28,31,.6)}
+button.quiet{background:none;color:var(--muted);border:1px solid var(--line2)}
+button.quiet:hover{color:var(--text);border-color:var(--line2);box-shadow:none}
+button[disabled]{opacity:.5;cursor:default;box-shadow:none}
+form.row{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.note{margin:14px 0 0;min-height:18px;font:400 11.5px var(--mono);color:var(--warn)}
+.note[data-ok="1"]{color:var(--ok)}
+.when{color:var(--muted)}
+.log{margin-top:14px;max-height:280px;overflow:auto;font:400 11.5px/1.9 var(--mono);color:var(--dim)}
+.log b{font-weight:500;color:var(--text)}
+.log .no{color:var(--warn)}
+@media (max-width:640px){
+  table,thead,tbody,tr,td,th{display:block}
+  thead{display:none}
+  tr{padding:12px 0;border-bottom:1px solid var(--line)}
+  td{border:0;padding:3px 0}
+}
+</style>
+</head>
+<body>
+<div class="space" aria-hidden="true"></div>
+<main>
+  <p class="eyebrow">Bookends · Universal Dashboard</p>
+  <h1>Who has <em>access</em></h1>
+  <p class="lede">Superadmins and admins each have their own account. Readers and viewers share one access
+    word each — change a word and everyone holding the old one is signed out.</p>
+  <a class="back" href="./">← Back to the dashboard</a>
+
+  <section>
+    <h2>People</h2>
+    <p class="hint">A superadmin can open this page and manage access. An admin can open the dashboard and
+      whatever apps admins are allowed. Adding a name that already exists sets a new password for it.
+      <b>Apps</b> opens that person's own exceptions: one app given to them alone, or taken away from them
+      alone, whatever their role says.</p>
+    <table>
+      <thead><tr><th>Name</th><th>Role</th><th>Added</th><th></th></tr></thead>
+      <tbody id="people"></tbody>
+    </table>
+    <form class="row" id="addForm">
+      <input id="addName" placeholder="name" autocapitalize="none" spellcheck="false" required>
+      <input id="addPass" type="password" placeholder="password" required>
+      <select id="addRole"><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select>
+      <button type="submit">Add or reset</button>
+    </form>
+    <p class="note" id="peopleNote" role="status" aria-live="polite"></p>
+  </section>
+
+  <section>
+    <h2>Shared access words</h2>
+    <p class="hint">One word for every reader, one for every viewer. Anyone with the word is in, so there is no
+      telling who used it — rotate them when someone leaves.</p>
+    <table>
+      <thead><tr><th>Word</th><th>Last set</th><th></th></tr></thead>
+      <tbody id="words"></tbody>
+    </table>
+    <p class="note" id="wordNote" role="status" aria-live="polite"></p>
+  </section>
+
+  <section>
+    <h2>Which apps each role sees</h2>
+    <p class="hint">The lowest role that may see an app. Anything higher sees it too. An app someone may not see
+      is not sent to their browser at all — not its name, not its address. New apps start at admin. Set an app to
+      <b>superadmins</b> to keep it closed by default and hand it out person by person under <b>Apps</b> above.</p>
+    <table>
+      <thead><tr><th>App</th><th>Seen by</th></tr></thead>
+      <tbody id="apps"></tbody>
+    </table>
+    <p class="note" id="appNote" role="status" aria-live="polite"></p>
+  </section>
+
+  <section>
+    <h2>Recent sign-ins</h2>
+    <p class="hint">The last forty attempts, newest first. A shared word shows only as "reader" or "viewer".</p>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const ROLES = ['viewer', 'reader', 'admin', 'superadmin'];
+  const opened = new Set(); // people whose own apps are folded out
+
+  const say = (el, message, ok = false) => {
+    el.textContent = message;
+    el.dataset.ok = ok ? '1' : '';
+  };
+
+  async function call(path, body) {
+    const res = await fetch(path, body
+      ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      : undefined);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'That did not work.');
+    return data;
+  }
+
+  const make = (tag, text, cls) => {
+    const n = document.createElement(tag);
+    if (text) n.textContent = text;
+    if (cls) n.className = cls;
+    return n;
+  };
+
+  function render(state) {
+    // People
+    const people = $('people');
+    people.replaceChildren();
+    state.users.forEach((u) => {
+      const tr = document.createElement('tr');
+      tr.append(make('td', u.name, 'name'));
+      const roleCell = make('td');
+      const tag = make('span', u.role, 'tagrole');
+      tag.dataset.r = u.role;
+      roleCell.append(tag);
+      tr.append(roleCell, make('td', u.added || '—', 'when'));
+
+      const actions = make('td');
+      // Their own exceptions, folded out under the row.
+      const own = make('button', 'Apps', 'quiet');
+      const fold = document.createElement('tr');
+      fold.className = 'own';
+      const cell = make('td');
+      cell.colSpan = 4;
+      fold.append(cell);
+      // Whoever was folded out stays folded out when the page redraws after a change.
+      fold.hidden = !opened.has(u.name);
+      if (!fold.hidden) drawOwn(cell, u, state);
+      own.onclick = () => {
+        fold.hidden = !fold.hidden;
+        if (fold.hidden) opened.delete(u.name);
+        else { opened.add(u.name); drawOwn(cell, u, state); }
+      };
+      const count = Object.keys(u.apps || {}).length;
+      actions.append(own);
+      if (count) actions.append(make('span', count === 1 ? '1 exception' : count + ' exceptions', 'exception'));
+      actions.append(' ');
+      if (u.name !== state.me) {
+        const swap = make('button', u.role === 'superadmin' ? 'Make admin' : 'Make superadmin', 'quiet');
+        swap.onclick = () => run($('peopleNote'), () =>
+          call('api/admin/user', { action: 'role', name: u.name, role: u.role === 'superadmin' ? 'admin' : 'superadmin' }));
+        const gone = make('button', 'Remove', 'quiet');
+        gone.onclick = () => {
+          if (!confirm(`Remove ${u.name}? They will be signed out and cannot sign in again.`)) return;
+          run($('peopleNote'), () => call('api/admin/user', { action: 'remove', name: u.name }));
+        };
+        actions.append(swap, ' ', gone);
+      } else {
+        actions.append(make('span', 'that is you', 'when'));
+      }
+      tr.append(actions);
+      people.append(tr, fold);
+    });
+
+    // Shared words
+    const words = $('words');
+    words.replaceChildren();
+    ['reader', 'viewer'].forEach((kind) => {
+      const tr = document.createElement('tr');
+      tr.append(make('td', kind, 'name'));
+      tr.append(make('td', state.words[kind] ? new Date(state.words[kind]).toLocaleString() : 'not in use', 'when'));
+
+      const cell = make('td');
+      const field = document.createElement('input');
+      field.type = 'password';
+      field.placeholder = `new ${kind} word`;
+      field.autocomplete = 'new-password';
+      const set = make('button', 'Set');
+      set.onclick = () => run($('wordNote'), async () => {
+        await call('api/admin/word', { kind, word: field.value });
+        field.value = '';
+      }, `The ${kind} word is set. Anyone holding the old one is signed out.`);
+      cell.append(field, ' ', set);
+      if (state.words[kind]) {
+        const off = make('button', 'Take out of use', 'quiet');
+        off.onclick = () => {
+          if (!confirm(`Take the ${kind} word out of use? Everyone using it is signed out.`)) return;
+          run($('wordNote'), () => call('api/admin/word', { kind, clear: true }));
+        };
+        cell.append(' ', off);
+      }
+      tr.append(cell);
+      words.append(tr);
+    });
+
+    // Per-app access
+    const apps = $('apps');
+    apps.replaceChildren();
+    state.apps.forEach((app) => {
+      const tr = document.createElement('tr');
+      tr.append(make('td', app.name, 'name'));
+      const cell = make('td');
+      const pick = document.createElement('select');
+      ROLES.forEach((role) => {
+        const opt = document.createElement('option');
+        opt.value = role;
+        opt.textContent = { viewer: 'Everyone (viewer and up)', reader: 'Readers and up', admin: 'Admins only',
+          superadmin: 'Superadmins, and anyone named below' }[role];
+        opt.selected = app.role === role;
+        pick.append(opt);
+      });
+      pick.onchange = () => run($('appNote'), () => call('api/admin/policy', { id: app.id, role: pick.value }),
+        `${app.name}: ${pick.options[pick.selectedIndex].textContent.toLowerCase()}.`);
+      cell.append(pick);
+      tr.append(cell);
+      apps.append(tr);
+    });
+
+    // The log
+    const log = $('log');
+    log.replaceChildren();
+    if (!state.log.length) log.append(make('p', 'Nothing yet.'));
+    state.log.forEach((row) => {
+      const line = make('div', '', row.ok ? '' : 'no');
+      const when = new Date(row.at).toLocaleString();
+      line.append(make('b', row.ok ? '✓' : '✗'), ` ${when} — `,
+        row.who || 'unknown', row.role ? ` (${row.role})` : '', ` · ${row.how} · ${row.ip}`);
+      log.append(line);
+    });
+  }
+
+  // Every app, and what this person's own rule for it is: their role's answer, or an exception.
+  function drawOwn(cell, user, state) {
+    const box = make('div', '', 'box');
+    box.append(make('h3', user.name + " — apps for this person only"));
+    state.apps.forEach((app) => {
+      const row = make('div', '', 'app');
+      const byRole = ROLES.indexOf(user.role) >= ROLES.indexOf(app.role);
+      row.append(make('span', app.name));
+      const pick = document.createElement('select');
+      [['', 'Their role decides (' + (byRole ? 'sees it' : 'does not') + ')'], ['allow', 'Always give it to them'], ['deny', 'Never give it to them']]
+        .forEach(([value, label]) => {
+          const opt = document.createElement('option');
+          opt.value = value;
+          opt.textContent = label;
+          opt.selected = (user.apps || {})[app.id] === value || (!((user.apps || {})[app.id]) && value === '');
+          pick.append(opt);
+        });
+      pick.onchange = () => run($('peopleNote'), () => call('api/admin/userapp', { name: user.name, id: app.id, rule: pick.value }),
+        pick.value === '' ? app.name + ': back to what ' + user.name + "'s role says."
+          : app.name + ': ' + (pick.value === 'allow' ? 'always' : 'never') + ' for ' + user.name + '.');
+      row.append(pick);
+      box.append(row);
+    });
+    cell.replaceChildren(box);
+  }
+
+  async function run(note, work, okMessage) {
+    say(note, 'Working…');
+    try {
+      await work();
+      await load();
+      say(note, okMessage || 'Done.', true);
+    } catch (err) {
+      say(note, err.message);
+    }
+  }
+
+  async function load() {
+    const state = await call('api/admin/state');
+    render(state);
+    return state;
+  }
+
+  $('addForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    run($('peopleNote'), async () => {
+      await call('api/admin/user', { name: $('addName').value, password: $('addPass').value, role: $('addRole').value });
+      $('addName').value = '';
+      $('addPass').value = '';
+    }, 'Saved.');
+  });
+
+  load().catch((err) => say($('peopleNote'), err.message));
+})();
+</script>
+</body>
+</html>

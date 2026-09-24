@@ -3,9 +3,13 @@
 /**
  * Accounts for the dashboard.
  *
- *   node tools/user.js add krish          add or replace an account, asking for the password
+ *   node tools/user.js super krish        make an account a superadmin: the only way to create the first
+ *   node tools/user.js add krish          add or replace an admin account, asking for the password
  *   node tools/user.js add krish hunter2  same, password on the command line (it lands in your shell history)
- *   node tools/user.js list               who has an account
+ *   node tools/user.js demote krish       put a superadmin back to admin
+ *   node tools/user.js word reader        set the shared reader word (asks for it); also: word viewer
+ *   node tools/user.js word reader off    take that shared word out of use
+ *   node tools/user.js list               who has an account, and what the shared words are
  *   node tools/user.js remove krish       take an account away
  *   node tools/user.js export             users.json on one line, to paste into the host's UNISIS_USERS
  *   node tools/user.js google <id>        set the Google client id (sign-in with Google turns on)
@@ -23,6 +27,8 @@ const readline = require('node:readline');
 const auth = require('../auth.js');
 
 const [cmd, name, passwordArg] = process.argv.slice(2);
+const ROLE_NOTE = 'Roles: superadmin runs the console at /admin, admin opens the dashboard,\n'
+  + 'reader and viewer share one access word each.';
 
 function askPassword(prompt) {
   return new Promise((resolve) => {
@@ -44,8 +50,35 @@ function askPassword(prompt) {
     if (!name) return fail('Which account? e.g. node tools/user.js add krish');
     const password = passwordArg || (await askPassword(`Password for ${name}: `));
     if (password.length < 8) return fail('Use at least 8 characters.');
-    auth.addUser(name, password);
-    console.log(`${name} can now sign in.`);
+    auth.addUser(name, password, 'admin');
+    console.log(`${name} can now sign in as an admin.`);
+    return;
+  }
+  if (cmd === 'super' || cmd === 'demote') {
+    if (!name) return fail(`Which account? e.g. node tools/user.js ${cmd} krish`);
+    const role = cmd === 'super' ? 'superadmin' : 'admin';
+    try {
+      if (!auth.setRole(name, role)) return fail(`No account called ${name}. Add one first: node tools/user.js add ${name}`);
+    } catch (err) {
+      return fail(err.message);
+    }
+    console.log(cmd === 'super' ? `${name} is a superadmin and can manage access at /admin.` : `${name} is an admin again.`);
+    return;
+  }
+  if (cmd === 'word') {
+    if (!auth.SHARED.includes(name)) return fail('Which word? node tools/user.js word reader   (or: word viewer)');
+    if (String(passwordArg).toLowerCase() === 'off') {
+      auth.setWord(name, null);
+      console.log(`The ${name} word is out of use. Anyone holding it is signed out.`);
+      return;
+    }
+    const word = passwordArg || (await askPassword(`Access word for ${name}s: `));
+    try {
+      auth.setWord(name, word);
+    } catch (err) {
+      return fail(err.message);
+    }
+    console.log(`The ${name} word is set. Anyone holding the old one is signed out.`);
     return;
   }
   if (cmd === 'remove') {
@@ -55,8 +88,11 @@ function askPassword(prompt) {
   }
   if (cmd === 'list') {
     const users = auth.listUsers();
-    if (!users.length) return console.log('No accounts yet. Add one: node tools/user.js add <name>');
-    users.forEach((u) => console.log(`${u.name.padEnd(16)} added ${u.added}`));
+    if (!users.length) console.log('No accounts yet. Add one: node tools/user.js add <name>');
+    users.forEach((u) => console.log(`${u.name.padEnd(16)} ${u.role.padEnd(11)} added ${u.added}`));
+    const set = auth.wordsSet();
+    auth.SHARED.forEach((kind) => console.log(`${(kind + ' word').padEnd(16)} ${set[kind] ? `set ${set[kind].slice(0, 10)}` : 'not in use'}`));
+    if (!users.some((u) => u.role === 'superadmin')) console.log('\nNo superadmin yet: node tools/user.js super <name>');
     return;
   }
   if (cmd === 'export') {
@@ -88,7 +124,7 @@ function askPassword(prompt) {
     console.log(conf.allowed.length ? `Allowed: ${conf.allowed.join(', ')}` : 'Nobody is allowed yet.');
     return;
   }
-  fail('Usage: node tools/user.js add|remove|list|export|google|allow|deny|config [name] [password]');
+  fail('Usage: node tools/user.js super|demote|add|remove|word|list|export|google|allow|deny|config [name] [secret]\n' + ROLE_NOTE);
 })();
 
 function fail(message) {

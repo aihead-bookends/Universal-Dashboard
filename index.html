@@ -76,16 +76,22 @@ html.arriving .wrap{opacity:0}
   padding:0 calc(clamp(24px,5vw,96px) + var(--safe-r)) 24px calc(clamp(24px,5vw,96px) + var(--safe-l))}
 
 /* hero: nearly a full screen before the apps */
-.hero{min-height:92svh;display:flex;flex-direction:column;justify-content:flex-end;padding:calc(48px + var(--safe-t)) 0 clamp(36px,8vh,88px)}
+.hero{min-height:92svh;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;padding:calc(48px + var(--safe-t)) 0 clamp(36px,8vh,88px)}
 .eyebrow{margin:0;font:400 11px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
 .eyebrow span{white-space:nowrap}
-.title{margin:18px 0 0;font-size:clamp(44px,8.4vw,96px);font-weight:600;line-height:.98;letter-spacing:-.02em}
+.title{margin:18px 0 0;font-size:clamp(46px,8vw,104px);font-weight:600;line-height:.98;letter-spacing:-.02em}
 .title em{padding-right:.06em;color:var(--gold);
   background:linear-gradient(100deg,#8C6A18 0%,#A87D1C 45%,#6A5118 115%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+/* "By" and the Bookends Hospitality wordmark, under the title; "By" set like the eyebrow above */
+.by{margin:clamp(16px,2.8vh,26px) 0 0;display:flex;flex-direction:column;align-items:center;gap:10px;
+  font:400 11px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+.by img{display:block;width:auto;height:clamp(54px,6.4vw,88px)}
+/* letter-spacing trails the last letter; the same space in front keeps "By" truly centred */
+.by span{padding-left:.26em}
 .lede{margin:18px 0 0;max-width:46ch;font-size:clamp(16px,1.7vw,19px);line-height:1.5;font-style:italic;color:var(--dim)}
 
-.tools{margin-top:clamp(28px,5vh,44px);display:flex;align-items:center;gap:18px}
+.tools{margin-top:clamp(28px,5vh,44px);width:100%;display:flex;align-items:center;justify-content:center;gap:18px}
 .search{position:relative;flex:1;max-width:460px;display:flex;align-items:center;height:54px;padding:0 12px 0 48px;
   border:1px solid var(--line2);border-radius:999px;background:rgba(255,255,255,.72);
   -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
@@ -100,7 +106,7 @@ html.arriving .wrap{opacity:0}
 .search kbd{font:11px var(--mono);color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:3px 10px}
 .count{font:400 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
 
-.cue{margin-top:clamp(32px,6vh,60px);align-self:flex-start;display:inline-flex;align-items:center;gap:14px;
+.cue{margin-top:clamp(32px,6vh,60px);align-self:center;display:inline-flex;align-items:center;gap:14px;
   color:var(--muted);text-decoration:none;font:400 10.5px var(--mono);letter-spacing:.26em;text-transform:uppercase;transition:color .4s var(--ease)}
 .cue i{position:relative;width:1px;height:38px;background:var(--line2);overflow:hidden}
 .cue i::after{content:"";position:absolute;left:0;top:-40%;width:1px;height:40%;background:var(--text);animation:fall 2.4s var(--ease) infinite}
@@ -219,6 +225,8 @@ html.arriving .wrap{opacity:0}
 .empty{margin:28px 0 0;text-align:center;font-style:italic;color:var(--muted)}
 
 .who{margin-left:16px}
+.who a{margin-left:14px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.who a:hover{color:var(--text)}
 .who button{margin-left:10px;padding:0;border:0;background:none;cursor:pointer;color:var(--muted);
   font:inherit;letter-spacing:inherit;text-transform:inherit;text-decoration:underline;text-underline-offset:3px}
 .who button:hover{color:var(--text)}
@@ -268,7 +276,8 @@ html.arriving .wrap{opacity:0}
 <main class="wrap">
   <section class="hero">
     <p class="eyebrow" id="greet">Welcome back</p>
-    <h1 class="title">Bookends <em>Universal Dashboard</em></h1>
+    <h1 class="title"><em>Universal Dashboard</em></h1>
+    <p class="by"><span>By</span><img src="icons/bookends-hospitality.png" alt="Bookends Hospitality" width="389" height="109"></p>
     <p class="lede">Every Bookends app, one universe.</p>
 
     <div class="tools">

@@ -72,6 +72,11 @@ button[disabled]{opacity:.55;cursor:default;transform:none}
 .or{display:flex;align-items:center;gap:14px;font:400 10px var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--faint)}
 .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 .note{min-height:20px;margin:2px 0 0;font:400 11px var(--mono);letter-spacing:.08em;color:var(--warn)}
+/* the way through to a name and a password, for the people who have one */
+.link{margin:clamp(18px,3vh,26px) 0 0;padding:0;min-height:0;background:none;border:0;cursor:pointer;
+  color:var(--muted);font:400 10.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;
+  text-decoration:underline;text-underline-offset:4px}
+.link:hover{color:var(--text);transform:none;box-shadow:none}
 .foot{margin:clamp(30px,6vh,56px) 0 0;font:400 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
 @media (max-width:640px){
   h1{font-size:36px}
@@ -89,12 +94,23 @@ button[disabled]{opacity:.55;cursor:default;transform:none}
 <main>
   <p class="eyebrow">Bookends · Universal Dashboard</p>
   <h1>Sign <em>in</em></h1>
-  <p class="lede">Every Bookends app, one universe. Ask Krish for an account.</p>
+  <p class="lede">Every Bookends app, one universe. One short word is all most people need.</p>
 
   <div class="ways" id="ways" hidden>
     <div id="google"></div>
     <p class="or" id="or" hidden>or</p>
   </div>
+
+  <form id="wordForm" autocomplete="off" hidden>
+    <div>
+      <label for="word">Access word</label>
+      <input id="word" name="access" type="password" autocomplete="one-time-code" required placeholder="one short word">
+    </div>
+    <p class="note" id="wordNote" role="status" aria-live="polite"></p>
+    <button id="wordGo" type="submit">Enter</button>
+  </form>
+
+  <button class="link" id="staff" type="button" hidden>Staff sign-in</button>
 
   <form id="form" autocomplete="on" hidden>
     <div>
@@ -118,6 +134,10 @@ button[disabled]{opacity:.55;cursor:default;transform:none}
   const form = document.getElementById('form');
   const note = document.getElementById('note');
   const go = document.getElementById('go');
+  const wordForm = document.getElementById('wordForm');
+  const wordNote = document.getElementById('wordNote');
+  const wordGo = document.getElementById('wordGo');
+  const staff = document.getElementById('staff');
   const or = document.getElementById('or');
   const gbox = document.getElementById('google');
   const ways = document.getElementById('ways');
@@ -152,7 +172,7 @@ button[disabled]{opacity:.55;cursor:default;transform:none}
     }
   }
 
-  async function post(path, body) {
+  async function post(path, body, say = note) {
     const res = await fetch(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -160,9 +180,30 @@ button[disabled]{opacity:.55;cursor:default;transform:none}
     });
     if (res.ok) return land();
     const data = await res.json().catch(() => ({}));
-    note.textContent = data.error || 'That did not work.';
+    say.textContent = data.error || 'That did not work.';
     return null;
   }
+
+  /* ------------------------------------------------ the shared access word */
+  // One field, one word. Which role it opens is the server's to decide.
+  wordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    wordGo.disabled = true;
+    wordNote.textContent = 'Checking…';
+    try {
+      await post('api/word', { word: document.getElementById('word').value }, wordNote);
+    } catch {
+      wordNote.textContent = 'The dashboard is not answering. Is the server running?';
+    }
+    wordGo.disabled = false;
+    document.getElementById('word').select();
+  });
+
+  staff.addEventListener('click', () => {
+    staff.hidden = true;
+    form.hidden = false;
+    form.username.focus();
+  });
 
   /* ------------------------------------------------------------ Google */
   // Google hands the page a signed token; the server checks it and the allow list.
@@ -210,12 +251,19 @@ button[disabled]{opacity:.55;cursor:default;transform:none}
       ways.hidden = false;
       showGoogle(config.google);
     }
-    if (config.passwords) {
-      form.hidden = false;
-      or.hidden = !config.google;
-      if (!config.google) form.username.focus();
+    if (config.words) {
+      wordForm.hidden = false;
+      document.getElementById('word').focus();
     }
-    if (!config.google && !config.passwords) {
+    // Accounts are for staff: offered behind a link, unless there is no other way in.
+    if (config.passwords) {
+      const only = !config.words && !config.google;
+      staff.hidden = only;
+      form.hidden = !only;
+      or.hidden = !config.google;
+      if (only) form.username.focus();
+    }
+    if (!config.google && !config.passwords && !config.words) {
       note.textContent = 'Sign-in is not set up yet on this dashboard.';
     }
   })();
