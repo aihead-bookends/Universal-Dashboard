@@ -28,7 +28,7 @@ const auth = require('./auth.js');
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT) || 4000;
 
-const PUBLIC = new Set(['index.html', 'app.js', 'apps.js', 'sw.js', 'manifest.webmanifest', 'login.html', 'admin.html']);
+const PUBLIC = new Set(['index.html', 'app.js', 'apps.js', 'sw.js', 'manifest.webmanifest', 'login.html', 'admin.html', 'smoke.js']);
 // Served before signing in: the login page, and the icons a browser asks for early.
 const OPEN = new Set(['login.html', 'manifest.webmanifest']);
 // Superadmins only.
