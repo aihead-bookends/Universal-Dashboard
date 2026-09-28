@@ -1,35 +1,33 @@
 'use strict';
 
 /**
- * Who may open the dashboard, and how much of it they see (server.js).
+ * Who may open the dashboard, and which apps they see (server.js).
  *
- * Four roles, in order of power:
+ * Two kinds of account:
  *
- *   superadmin  runs the place: everything an admin can do, plus the console at /admin,
- *               where people, access words and per-app access are managed.
- *   admin       an individual account: a name and a password of their own.
- *   reader      one shared access word, handed to the people who may look at the systems.
- *   viewer      one shared access word, the least they can be given.
+ *   superadmin  runs the place: signs in with a name and a password, sees every app, and opens the
+ *               console at /admin, where accounts and their apps are managed.
+ *   user        signs in with an access word of their own — one word, no name to type — and sees
+ *               only the apps a superadmin has given them: an app with its own sign-in as its
+ *               reader or its writer account, an app without one simply yes or no.
  *
- * Every app in apps.js is given the lowest role that may see it (default: admin, so a new app is
- * invisible to everyone else until it is opened up on purpose), and any one person can be given an
- * exception to that: an app their role would not reach, or one taken away from them alone.
- *
- * server.js filters the app list against all of that before sending it, so an app somebody may not
- * see never reaches their browser at all — not its name, not its address.
+ * server.js filters the app list against that before sending it, so an app somebody may not see
+ * never reaches their browser at all — not its name, not its address. A new app starts as a no for
+ * every user, so it is invisible to them until it is given out on purpose.
  *
  * Nothing is stored in the clear. Passwords and access words each keep a random salt and a
- * PBKDF2-SHA256 hash, in users.json (git-ignored, readable only by you). A session is a cookie
- * holding "name|role|issued|expiry" plus an HMAC of it, signed with a secret from UNISIS_SECRET
- * or one generated into .session-secret on first run.
+ * PBKDF2-SHA256 hash, in users.json (git-ignored, readable only by you). A word also keeps a keyed
+ * fingerprint of itself, so the one account it belongs to can be found without trying every
+ * account's hash in turn, and a copy of itself sealed with AES-256-GCM under a key drawn from the
+ * session secret, because a superadmin has to be able to tell someone what their word is. The
+ * file alone opens none of them; a password is never kept in any form that can be read back. A session is a cookie holding "name|role|issued|expiry" plus an HMAC of it,
+ * signed with a secret from UNISIS_SECRET or one generated into .session-secret on first run.
  *
- * A session is checked against the file on every request, so power taken away is taken away at
- * once: demote an admin and their open session becomes a reader's; rotate a shared word and
- * everyone holding the old one is signed out.
+ * A session is checked against the file on every request, so access taken away is taken away at
+ * once: remove an account, or give a user a new word, and the old session stops working.
  *
- *   node tools/user.js super krish          make the first superadmin (the only way in)
- *   node tools/user.js add asha             add an admin (asks for the password)
- *   node tools/user.js word reader          set the shared reader word
+ *   node tools/user.js super krish          add a superadmin (the only way in, the first time)
+ *   node tools/user.js add asha             add a user (asks for their access word)
  *   node tools/user.js list                 who has what
  */
 
@@ -46,11 +44,8 @@ const SESSION_DAYS = 30;
 const LOG_KEEP = 200;
 const MIN_SECRET = 6; // the shortest password or access word that will be accepted
 
-/* The order that decides everything: a role may see whatever its own rank, or a lower one, allows. */
-const ROLES = ['viewer', 'reader', 'admin', 'superadmin'];
-const SHARED = ['reader', 'viewer']; // the two roles that share one word between them
+const ROLES = ['user', 'superadmin'];
 const rank = (role) => ROLES.indexOf(String(role || ''));
-const may = (role, need) => rank(role) >= rank(need) && rank(role) >= 0;
 
 function secret() {
   if (process.env.UNISIS_SECRET) return Buffer.from(process.env.UNISIS_SECRET, 'utf8');
@@ -60,28 +55,55 @@ function secret() {
   return Buffer.from(fs.readFileSync(SECRET_FILE, 'utf8').trim(), 'base64');
 }
 
-const BLANK = { version: 2, users: {}, shared: {}, apps: {}, log: [] };
+const BLANK = { version: 3, users: {}, log: [] };
 
 /**
- * The file as it stands, brought up to date if it is still the old shape. Before roles existed
- * users.json was a flat map of name to account; those accounts become admins, and one of them
- * has to be made superadmin from the command line before the console can be opened.
+ * The file as it stands, brought up to date if it is an older shape. Nothing is lost on the way:
+ *
+ *   version 1  a flat map of name to account; each becomes a user who signs in with their password.
+ *   version 2  four roles, two shared words and a lowest-role rule per app. Superadmins stay as they
+ *              are. Admins become users who keep their password and are given every app admins
+ *              could see, with their own exceptions on top. The shared reader and viewer words go:
+ *              there is no one behind a shared word to give apps to.
+ *
+ * The upgraded shape is written back the next time anything is saved.
  */
 function readStore() {
   let raw;
   try {
     raw = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
   } catch {
-    return { ...BLANK, users: {}, shared: {}, apps: {}, log: [] };
+    return { ...BLANK, users: {}, log: [] };
   }
-  if (raw && raw.version === 2) {
-    return { ...BLANK, ...raw, users: raw.users || {}, shared: raw.shared || {}, apps: raw.apps || {}, log: raw.log || [] };
-  }
+  if (raw && raw.version === 3) return { ...BLANK, ...raw, users: raw.users || {}, log: raw.log || [] };
+  if (raw && raw.version === 2) return upgrade(raw);
   const users = {};
   for (const [name, rec] of Object.entries(raw || {})) {
-    if (rec && rec.salt && rec.hash) users[name] = { ...rec, role: 'admin' };
+    if (rec && rec.salt && rec.hash) users[name] = { ...rec, role: 'user' };
   }
-  return { ...BLANK, users };
+  return { ...BLANK, users, log: [] };
+}
+
+const OLD_ROLES = ['viewer', 'reader', 'admin', 'superadmin'];
+function upgrade(raw) {
+  const policy = raw.apps || {};
+  // What an admin could see under the old rule: an app open to admins or below. An app the old file
+  // named with a role it no longer knows is left closed.
+  const openToAdmins = (id) => OLD_ROLES.indexOf(policy[id] || 'admin') <= OLD_ROLES.indexOf('admin')
+    && OLD_ROLES.includes(policy[id] || 'admin');
+  const users = {};
+  for (const [name, rec] of Object.entries(raw.users || {})) {
+    const { apps: rules = {}, ...rest } = rec;
+    if (rec.role === 'superadmin') { users[name] = rest; continue; }
+    const apps = {};
+    for (const id of Object.keys(policy)) if (openToAdmins(id)) apps[id] = true;
+    for (const [id, rule] of Object.entries(rules)) {
+      if (rule === 'allow') apps[id] = true;
+      if (rule === 'deny') delete apps[id];
+    }
+    users[name] = { ...rest, role: 'user', apps };
+  }
+  return { ...BLANK, users, log: raw.log || [] };
 }
 
 function writeStore(store) {
@@ -103,35 +125,99 @@ const matches = (rec, attempt) => {
   return Boolean(rec) && got.length === want.length && crypto.timingSafeEqual(got, want);
 };
 
+/* ------------------------------------------------------------ sealed words */
+
+// A key for sealing words, drawn from the session secret but never the same bytes as it.
+const sealKey = () => crypto.createHmac('sha256', secret()).update('unisis access word seal').digest();
+
+function seal(text) {
+  const iv = crypto.randomBytes(12);
+  const box = crypto.createCipheriv('aes-256-gcm', sealKey(), iv);
+  const data = Buffer.concat([box.update(String(text), 'utf8'), box.final()]);
+  return { iv: iv.toString('base64'), tag: box.getAuthTag().toString('base64'), data: data.toString('base64') };
+}
+
+// The word back out, or '' if it cannot be: sealed under a different secret, or tampered with.
+function unseal(sealed) {
+  if (!sealed || !sealed.iv || !sealed.tag || !sealed.data) return '';
+  try {
+    const box = crypto.createDecipheriv('aes-256-gcm', sealKey(), Buffer.from(sealed.iv, 'base64'));
+    box.setAuthTag(Buffer.from(sealed.tag, 'base64'));
+    return Buffer.concat([box.update(Buffer.from(sealed.data, 'base64')), box.final()]).toString('utf8');
+  } catch {
+    return '';
+  }
+}
+
 /* ------------------------------------------------------------------ people */
 
 const clean = (name) => String(name || '').trim().toLowerCase();
+const superadmins = (users) => Object.values(users).filter((u) => u.role === 'superadmin').length;
 
-function addUser(name, password, role = 'admin') {
-  if (String(password || '').length < MIN_SECRET) throw new Error(`the password must be at least ${MIN_SECRET} characters`);
-  if (!['admin', 'superadmin'].includes(role)) throw new Error('an account is either an admin or a superadmin');
+// A word's fingerprint: an HMAC under a random key kept in users.json itself, so a word leads
+// straight to the one account it opens, and the file keeps working if the session secret changes.
+function wordKey(store, word) {
+  if (!store.pepper) store.pepper = crypto.randomBytes(32).toString('base64');
+  return crypto.createHmac('sha256', Buffer.from(store.pepper, 'base64')).update(String(word)).digest('base64');
+}
+
+/**
+ * Add an account, or give an existing one a new secret (and, with it, possibly a new kind):
+ *   superadmin  secret is a password
+ *   user        secret is their access word; no two users may share one
+ * A user given a new word is signed out wherever they were signed in with the old one. Typing a
+ * user's current word again changes nothing for them: it only keeps a readable copy of it, which
+ * is how a word saved before words could be shown is made showable.
+ */
+function addUser(name, secretText, role = 'user') {
+  if (!ROLES.includes(role)) throw new Error('an account is either a user or a superadmin');
+  const what = role === 'superadmin' ? 'password' : 'access word';
+  if (String(secretText || '').length < MIN_SECRET) throw new Error(`the ${what} must be at least ${MIN_SECRET} characters`);
   const store = readStore();
   const key = clean(name);
   if (!key) throw new Error('that name is empty');
-  store.users[key] = { role, ...fresh(password), added: store.users[key]?.added || today() };
+  const old = store.users[key];
+  if (old && old.role === 'superadmin' && role !== 'superadmin' && superadmins(store.users) < 2) {
+    throw new Error('this is the only superadmin: add another one first');
+  }
+  const added = old?.added || today();
+  if (role === 'superadmin') {
+    store.users[key] = { role, ...fresh(secretText), added };
+  } else {
+    const fingerprint = wordKey(store, secretText);
+    const taken = Object.entries(store.users).find(([n, u]) => n !== key && u.key === fingerprint);
+    if (taken) throw new Error(`that access word is already ${taken[0]}'s: pick another`);
+    const same = old && old.role !== 'superadmin' && old.word && matches(old.word, secretText);
+    store.users[key] = { role, word: same ? old.word : fresh(secretText), key: fingerprint, sealed: seal(secretText),
+      set: same && old.set ? old.set : new Date().toISOString(),
+      added, apps: { ...(old?.apps || {}) } };
+  }
   writeStore(store);
 }
 
-const superadmins = (users) => Object.values(users).filter((u) => u.role === 'superadmin').length;
-
-function setRole(name, role) {
-  if (!['admin', 'superadmin'].includes(role)) throw new Error('an account is either an admin or a superadmin');
+/**
+ * A user changing their own word, from the dashboard. They must give the word they sign in with now
+ * (or, for a user from before words, their password), so an unattended screen is not enough to take
+ * the account over. The errors say nothing about anyone else: a word already in use is only "taken",
+ * never whose. The new word is kept like any other, readable by a superadmin, and every session from
+ * before it stops working; server.js hands the one making the change a fresh session.
+ */
+function changeOwnWord(name, current, next) {
   const store = readStore();
   const key = clean(name);
   const rec = store.users[key];
-  if (!rec) return false;
-  // The place can never be left without someone who can manage it.
-  if (rec.role === 'superadmin' && role !== 'superadmin' && superadmins(store.users) < 2) {
-    throw new Error('this is the only superadmin: make someone else one first');
+  if (!rec || rec.role === 'superadmin') throw new Error('Only a user can change an access word here.');
+  const proof = rec.word || (rec.hash ? rec : null);
+  if (!matches(proof, current)) throw new Error(rec.word ? 'That is not your current word.' : 'That is not your current password.');
+  if (String(next || '').length < MIN_SECRET) throw new Error(`The new word must be at least ${MIN_SECRET} characters.`);
+  if (rec.word && matches(rec.word, next)) throw new Error('That is already your word. Pick a new one.');
+  const fingerprint = wordKey(store, next);
+  if (Object.entries(store.users).some(([n, u]) => n !== key && u.key === fingerprint)) {
+    throw new Error('That word is taken. Pick another.');
   }
-  rec.role = role;
+  const { salt, hash: pw, ...rest } = rec; // a password gives way to the word
+  store.users[key] = { ...rest, word: fresh(next), key: fingerprint, sealed: seal(next), set: new Date().toISOString() };
   writeStore(store);
-  return true;
 }
 
 function removeUser(name) {
@@ -140,7 +226,7 @@ function removeUser(name) {
   const rec = store.users[key];
   if (!rec) return false;
   if (rec.role === 'superadmin' && superadmins(store.users) < 2) {
-    throw new Error('this is the only superadmin: make someone else one first');
+    throw new Error('this is the only superadmin: add another one first');
   }
   delete store.users[key];
   writeStore(store);
@@ -148,88 +234,125 @@ function removeUser(name) {
 }
 
 const listUsers = () => Object.entries(readStore().users)
-  .map(([name, rec]) => ({ name, role: rec.role || 'admin', added: rec.added || '', apps: { ...(rec.apps || {}) } }))
+  .map(([name, rec]) => ({
+    name,
+    role: rec.role === 'superadmin' ? 'superadmin' : 'user',
+    added: rec.added || '',
+    apps: levels(rec),             // { id: 'reader' | 'writer' | 'yes' }
+    word: Boolean(rec.key),        // signs in with an access word
+    shown: Boolean(rec.sealed),    // and that word can be looked up (set since words could be)
+    password: Boolean(rec.hash),   // signs in with a password (every superadmin; users from before words)
+  }))
   .sort((a, b) => rank(b.role) - rank(a.role) || a.name.localeCompare(b.name));
 
 // The role this name and password belong to, or '' if they belong to nobody.
 function checkUser(name, password) {
   const rec = readStore().users[clean(name)];
-  return matches(rec, password) ? rec.role || 'admin' : '';
-}
-
-/* ------------------------------------------------- the two shared words */
-
-function setWord(kind, word) {
-  if (!SHARED.includes(kind)) throw new Error('the shared words are reader and viewer');
-  const store = readStore();
-  if (word === null) {
-    delete store.shared[kind];
-  } else {
-    if (String(word || '').length < MIN_SECRET) throw new Error(`the access word must be at least ${MIN_SECRET} characters`);
-    store.shared[kind] = { ...fresh(word), set: new Date().toISOString() };
-  }
-  writeStore(store);
+  const account = rec && rec.hash ? rec : null;
+  return matches(account, password) ? account.role || 'user' : '';
 }
 
 /**
- * The role an access word opens, or '' for none. Both words are always checked, so the time
- * taken says nothing about which one was close.
+ * The name of the user this access word belongs to, or '' for none. The fingerprint finds the one
+ * account it could be; the hash is then checked in full, and a word that fits nobody costs the
+ * same single hash, so the time taken gives nothing away.
  */
 function checkWord(word) {
-  const { shared } = readStore();
-  let found = '';
-  for (const kind of SHARED) {
-    if (matches(shared[kind], word) && !found) found = kind;
-  }
-  return found;
+  const store = readStore();
+  if (!store.pepper || !word) return '';
+  const fingerprint = wordKey(store, word);
+  const found = Object.entries(store.users).find(([, u]) => u.role !== 'superadmin' && u.key === fingerprint);
+  return matches(found ? found[1].word : null, word) ? found[0] : '';
 }
 
-// What the console shows about them: when each was last set, never the words themselves.
-const wordsSet = () => Object.fromEntries(SHARED.map((kind) => [kind, readStore().shared[kind]?.set || '']));
+// Whether anyone can sign in with a word at all, which is what decides if the login page offers one.
+const anyWords = () => Object.values(readStore().users).some((u) => u.key);
+
+// A user's current access word, for a superadmin to pass on; '' if it was set before words were
+// kept this way, or the session secret has changed since, and so it cannot be read back.
+function peekWord(name) {
+  const rec = readStore().users[clean(name)];
+  return rec && rec.role !== 'superadmin' ? unseal(rec.sealed) : '';
+}
 
 /* ------------------------------------------------------- per-app access */
 
-// The lowest role that may see an app. Unknown apps are admin-only until someone says otherwise.
-const appRole = (id) => readStore().apps[String(id)] || 'admin';
-const policy = () => ({ ...readStore().apps });
+/**
+ * What a user has been given, app by app, kept on the user as apps: { id: level }:
+ *   'reader' / 'writer'  an app with its own sign-in, opened as its reader or its writer account
+ *   true                 an app with no sign-in (login: 'none' in apps.js), simply given
+ * Anything else, or nothing, is no. A plain true on an app that does have a sign-in, from before
+ * there were two levels, counts as reader: the lesser of the two.
+ */
+const LEVELS = ['reader', 'writer'];
+const levels = (rec) => Object.fromEntries(Object.entries((rec && rec.apps) || {})
+  .map(([id, v]) => [id, LEVELS.includes(v) ? v : v === true ? 'yes' : ''])
+  .filter(([, v]) => v));
 
-function setPolicy(id, role) {
-  if (!ROLES.includes(role)) throw new Error('an app is opened to viewer, reader, admin or superadmin');
-  const store = readStore();
-  store.apps[String(id)] = role;
-  writeStore(store);
+// This user's level for this app: 'reader', 'writer', 'yes' for an app without a sign-in, or '' for none.
+function levelOf(rec, app) {
+  const v = levels(rec)[app.id];
+  if (!v) return '';
+  if (app.login === 'none') return 'yes';
+  return v === 'writer' ? 'writer' : 'reader';
 }
 
-/**
- * One person may be given exceptions to the role rule: an app their role would not reach, or
- * one taken away from them alone. A shared word has no person behind it, so it follows its role.
- *   allow  this person sees it whatever their role says
- *   deny   this person does not, whatever their role says
- *   (none) their role decides, as before
- */
-function setUserApp(name, id, rule) {
+// Give one app to one user, or take it away: level is 'no', 'yes', 'reader' or 'writer'. server.js
+// has already checked the level suits the app.
+function setUserApp(name, id, level) {
   const store = readStore();
   const rec = store.users[clean(name)];
-  if (!rec) return false;
+  if (!rec || rec.role === 'superadmin') return false;
   const apps = { ...(rec.apps || {}) };
-  if (rule === 'allow' || rule === 'deny') apps[String(id)] = rule;
+  if (LEVELS.includes(level)) apps[String(id)] = level;
+  else if (level === 'yes') apps[String(id)] = true;
   else delete apps[String(id)];
-  if (Object.keys(apps).length) rec.apps = apps;
-  else delete rec.apps;
+  rec.apps = apps;
   writeStore(store);
   return true;
 }
 
-// What this person is served: their own exceptions first, then what their role reaches.
+// A user's level for one app, by name: what server.js checks before opening it for them.
+const levelFor = (name, app) => levelOf(readStore().users[clean(name)], app);
+
+// What this person is served. A user's apps each carry `as`, the account the app opens them as.
 function visibleFor(who, apps) {
-  const store = readStore();
-  const mine = (store.users[clean(who && who.name)] || {}).apps || {};
-  return apps.filter((app) => {
-    const rule = mine[app.id];
-    if (rule === 'allow') return true;
-    if (rule === 'deny') return false;
-    return may(who && who.role, store.apps[app.id] || 'admin');
+  if (!who) return [];
+  if (who.role === 'superadmin') return apps;
+  const rec = readStore().users[clean(who.name)];
+  return apps.flatMap((app) => {
+    const as = levelOf(rec, app);
+    if (!as) return [];
+    return [as === 'yes' ? app : { ...app, as }];
   });
+}
+
+/* ------------------------------------------------------ sign-in passes */
+
+/**
+ * Each app that takes sign-in passes has its own key, made here on first use and kept in
+ * users.json; the app keeps a copy in its own environment (tools/sso/verify.js checks passes with
+ * it). A pass says which user, which app and which account — reader or writer — and lives for sixty
+ * seconds. One app's key cannot make or check a pass for another.
+ */
+function ssoKey(appId) {
+  const store = readStore();
+  store.sso = store.sso || {};
+  if (!store.sso[appId]) {
+    store.sso[appId] = crypto.randomBytes(32).toString('base64');
+    writeStore(store);
+  }
+  return store.sso[appId];
+}
+
+const hasSsoKey = (appId) => Boolean((readStore().sso || {})[appId]);
+
+function ssoPass(appId, name, as) {
+  const now = Math.floor(Date.now() / 1000);
+  const body = b64url(JSON.stringify({ app: appId, sub: clean(name), as, iat: now, exp: now + 60,
+    jti: crypto.randomBytes(12).toString('base64url') }));
+  const sig = crypto.createHmac('sha256', Buffer.from(ssoKey(appId), 'base64')).update(body).digest();
+  return `${body}.${b64url(sig)}`;
 }
 
 /* --------------------------------------------------------- the sign-in log */
@@ -254,10 +377,9 @@ function newSession(name, role) {
 }
 
 /**
- * Who this cookie belongs to now — not who it belonged to when it was handed out. The role is
- * taken from the file every time, so a demotion takes hold at once; a shared session older than
- * the last rotation of its word is refused, which is what makes rotating a word sign people out.
- * Returns { name, role } or null.
+ * Who this cookie belongs to now — not who it belonged to when it was handed out. The account is
+ * looked up in the file every time, so a removed account is signed out at once, and so is a user
+ * whose word has been changed since the session began. Returns { name, role } or null.
  */
 function readSession(token) {
   const [bodyPart, macPart] = String(token || '').split('.');
@@ -270,17 +392,16 @@ function readSession(token) {
   const [name, role, issued, expiry] = body.split('|');
   if (!name || !(Number(expiry) > Date.now())) return null;
 
-  const store = readStore();
-  if (SHARED.includes(name)) {
-    const word = store.shared[name];
-    if (!word) return null; // the word has been taken away
-    if (Date.parse(word.set || 0) > Number(issued)) return null; // and rotating it ends old sessions
-    return { name, role: name };
+  const rec = readStore().users[name];
+  if (rec) {
+    const role = rec.role === 'superadmin' ? 'superadmin' : 'user';
+    // A user given a new word since this session began is signed out.
+    if (role === 'user' && rec.set && Date.parse(rec.set) > Number(issued)) return null;
+    return { name, role };
   }
-  const rec = store.users[name];
-  if (rec) return { name, role: rec.role || 'admin' };
-  // Google sign-in, where it is set up: an allowed address is an admin.
-  return isAllowed(name) ? { name, role: 'admin' } : null;
+  // Google sign-in, where it is set up: an allowed address is a user, and sees no app until a
+  // superadmin adds them as a user by that address and gives them some.
+  return isAllowed(name) ? { name, role: 'user' } : null;
 }
 
 const cookieName = 'unisis_session';
@@ -383,11 +504,10 @@ async function verifyGoogle(idToken, opts = {}) {
 }
 
 module.exports = {
-  ITERATIONS, KEY_BYTES, SESSION_DAYS, MIN_SECRET, cookieName, ROLES, SHARED, rank, may,
+  ITERATIONS, KEY_BYTES, SESSION_DAYS, MIN_SECRET, cookieName, ROLES, rank,
   readStore, writeStore,
-  addUser, removeUser, setRole, listUsers, checkUser,
-  setWord, checkWord, wordsSet,
-  appRole, policy, setPolicy, setUserApp, visibleFor,
+  addUser, changeOwnWord, removeUser, listUsers, checkUser, checkWord, anyWords, peekWord,
+  LEVELS, levelOf, levelFor, setUserApp, visibleFor, ssoKey, hasSsoKey, ssoPass,
   note, log,
   config, writeConfig, isAllowed, verifyGoogle,
   newSession, readSession, sessionCookie, clearedCookie, cookieValue,

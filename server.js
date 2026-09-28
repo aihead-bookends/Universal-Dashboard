@@ -10,10 +10,11 @@
  * Until a request carries a valid session cookie, the only things served are the login
  * page and what it needs; the dashboard, the app list and the scripts are refused.
  *
- * Roles (auth.js): superadmin, admin, reader, viewer, with per-person exceptions on top. The app
- * list is not a static file to the outside world — apps.js is read here, filtered against who is
- * asking, and only then sent, so an app somebody may not see never reaches their browser. The console at
- * /admin is superadmin only, and so is every api/admin call behind it.
+ * Accounts (auth.js): superadmins, who sign in with a password and see every app, and users, who
+ * sign in with an access word of their own and see the apps a superadmin has said yes to for them.
+ * The app list is not a static file to the outside world — apps.js is read here, filtered against
+ * who is asking, and only then sent, so an app somebody may not see never reaches their browser. The
+ * console at /admin is superadmin only, and so is every api/admin call behind it.
  *
  *   node tools/user.js super krish     the first superadmin
  */
@@ -136,20 +137,20 @@ const server = http.createServer(async (req, res) => {
     const token = auth.newSession(name, role);
     return sendJson(res, 200, { name: String(name).trim().toLowerCase(), role }, { 'Set-Cookie': auth.sessionCookie(token, secure) });
   }
-  // The shared words: one short word, and the role it opens decides what the dashboard shows.
+  // A user's own access word: one short word, and it says who they are.
   if (rel === 'api/word' && req.method === 'POST') {
     const ip = from(req);
     if (tooManyTries(ip)) return sendJson(res, 429, { error: 'Too many tries. Wait five minutes.' });
     const { word } = await readBody(req);
-    const role = auth.checkWord(word);
-    if (!role) {
+    const name = auth.checkWord(word);
+    if (!name) {
       auth.note({ who: '', role: '', ip, ok: false, how: 'word' });
       return sendJson(res, 401, { error: 'That access word is not in use.' });
     }
     tries.delete(ip);
-    auth.note({ who: role, role, ip, ok: true, how: 'word' });
-    const token = auth.newSession(role, role);
-    return sendJson(res, 200, { name: role, role }, { 'Set-Cookie': auth.sessionCookie(token, secure) });
+    auth.note({ who: name, role: 'user', ip, ok: true, how: 'word' });
+    const token = auth.newSession(name, 'user');
+    return sendJson(res, 200, { name, role: 'user' }, { 'Set-Cookie': auth.sessionCookie(token, secure) });
   }
   if (rel === 'api/google' && req.method === 'POST') {
     const ip = from(req);
@@ -161,24 +162,44 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 403, { error: `${account.email} is not on the list. Ask Krish to add it.` });
     }
     tries.delete(ip);
-    auth.note({ who: account.email, role: 'admin', ip, ok: true, how: 'google' });
-    const token = auth.newSession(account.email, 'admin');
-    return sendJson(res, 200, { name: account.email, role: 'admin' }, { 'Set-Cookie': auth.sessionCookie(token, secure) });
+    const role = auth.listUsers().find((u) => u.name === account.email)?.role || 'user';
+    auth.note({ who: account.email, role, ip, ok: true, how: 'google' });
+    const token = auth.newSession(account.email, role);
+    return sendJson(res, 200, { name: account.email, role }, { 'Set-Cookie': auth.sessionCookie(token, secure) });
   }
   // What the login page should offer.
   if (rel === 'api/config') {
-    const set = auth.wordsSet();
     return sendJson(res, 200, {
       google: auth.config().googleClientId || '',
-      passwords: auth.listUsers().length > 0,
-      words: Boolean(set.reader || set.viewer),
+      passwords: auth.listUsers().some((u) => u.password),
+      words: auth.anyWords(),
     });
   }
   if (rel === 'api/logout' && req.method === 'POST') {
     return sendJson(res, 200, { ok: true }, { 'Set-Cookie': auth.clearedCookie(secure) });
   }
   if (rel === 'api/me') {
-    return who ? sendJson(res, 200, who) : sendJson(res, 401, { error: 'Not signed in' });
+    if (!who) return sendJson(res, 401, { error: 'Not signed in' });
+    // Whether they can change their own word here, and whether they have one yet or still a password.
+    const mine = who.role === 'user' ? auth.listUsers().find((u) => u.name === who.name) : null;
+    return sendJson(res, 200, { ...who, changeWord: Boolean(mine), hasWord: Boolean(mine && mine.word) });
+  }
+  // A user choosing their own word. The old one, and every session made with it, stops working; this
+  // device is handed a fresh session so the one making the change stays signed in.
+  if (rel === 'api/me/word' && req.method === 'POST') {
+    if (!who || who.role !== 'user') return sendJson(res, 403, { error: 'Only a user can change an access word here.' });
+    const ip = from(req);
+    if (tooManyTries(ip)) return sendJson(res, 429, { error: 'Too many tries. Wait five minutes.' });
+    const { current, next } = await readBody(req);
+    try {
+      auth.changeOwnWord(who.name, current, next);
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+    tries.delete(ip);
+    auth.note({ ok: true, who: who.name, role: 'user', how: 'changed their word', ip });
+    const token = auth.newSession(who.name, 'user');
+    return sendJson(res, 200, { ok: true }, { 'Set-Cookie': auth.sessionCookie(token, secure) });
   }
 
   /* ------------------------------------------------ the console, superadmin only */
@@ -189,8 +210,9 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, {
           me: who.name,
           users: auth.listUsers(),
-          words: auth.wordsSet(),
-          apps: allApps().map(({ id, name }) => ({ id, name, role: auth.appRole(id) })),
+          apps: allApps().map(({ id, name, login, sso }) => ({
+            id, name, login: login === 'none' ? 'none' : 'accounts', sso: Boolean(sso), key: auth.hasSsoKey(id),
+          })),
           log: auth.log().slice(0, 40),
           minSecret: auth.MIN_SECRET,
         });
@@ -202,30 +224,65 @@ const server = http.createServer(async (req, res) => {
           if (name === who.name) return sendJson(res, 400, { error: 'You cannot remove your own account here.' });
           return sendJson(res, 200, { removed: auth.removeUser(name) });
         }
-        if (body.action === 'role') {
-          auth.setRole(name, body.role);
-          return sendJson(res, 200, { ok: true });
-        }
-        auth.addUser(name, body.password, body.role || 'admin'); // add, or set a new password
+        auth.addUser(name, body.secret, body.role || 'user'); // add, or give a new word or password
         return sendJson(res, 200, { ok: true });
       }
-      if (rel === 'api/admin/word' && req.method === 'POST') {
-        auth.setWord(body.kind, body.clear ? null : body.word);
-        return sendJson(res, 200, { ok: true });
+      // Yes or no to one app for one user.
+      // An app's sign-in key, made on first asking, for a superadmin to put in the app's settings.
+      if (rel === 'api/admin/ssokey' && req.method === 'POST') {
+        const app = allApps().find((a) => a.id === body.id && a.login !== 'none');
+        if (!app) return sendJson(res, 404, { error: 'No such app with a sign-in.' });
+        const key = auth.ssoKey(app.id);
+        auth.note({ ok: true, who: who.name, role: who.role, how: `looked up ${app.name}'s sign-in key`, ip: from(req) });
+        return sendJson(res, 200, { key });
       }
-      if (rel === 'api/admin/policy' && req.method === 'POST') {
-        auth.setPolicy(body.id, body.role);
-        return sendJson(res, 200, { ok: true });
+      // A user's access word, looked up when a superadmin presses Show, never sent with the page;
+      // every look goes into the sign-in log.
+      if (rel === 'api/admin/reveal' && req.method === 'POST') {
+        const name = String(body.name || '').trim().toLowerCase();
+        const word = auth.peekWord(name);
+        auth.note({ ok: true, who: who.name, role: who.role, how: `looked up ${name}'s word`, ip: from(req) });
+        return sendJson(res, 200, { word });
       }
-      // One person's exception to the role rule: allow, deny, or back to whatever their role says.
+      // One app for one user: no, or reader or writer for an app with its own sign-in, or yes for
+      // an app without one.
       if (rel === 'api/admin/userapp' && req.method === 'POST') {
-        const done = auth.setUserApp(body.name, body.id, body.rule);
-        return done ? sendJson(res, 200, { ok: true }) : sendJson(res, 404, { error: 'No such account.' });
+        const app = allApps().find((a) => a.id === body.id);
+        if (!app) return sendJson(res, 404, { error: 'No such app.' });
+        const allowed = app.login === 'none' ? ['no', 'yes'] : ['no', ...auth.LEVELS];
+        if (!allowed.includes(body.level)) {
+          return sendJson(res, 400, { error: `${app.name} is given as ${allowed.join(' or ')}.` });
+        }
+        const done = auth.setUserApp(body.name, body.id, body.level);
+        return done ? sendJson(res, 200, { ok: true }) : sendJson(res, 404, { error: 'No such user.' });
       }
     } catch (err) {
       return sendJson(res, 400, { error: err.message });
     }
     return sendJson(res, 404, { error: 'No such thing' });
+  }
+
+  /* ------------------------------------------------------- opening an app */
+  // A user's app cards point here, not at the app. The level is checked now, on the server; an app
+  // that takes sign-in passes gets one naming the account they were given, and they land in it
+  // already signed in. The pass rides after the #, so it never reaches a server log on the way.
+  const opening = /^open\/([\w-]+)$/.exec(rel);
+  if (opening) {
+    if (!who) return send(res, 302, 'text/plain', 'Sign in first', { Location: '/login' });
+    const app = allApps().find((a) => a.id === opening[1]);
+    const host = String(req.headers.host || 'localhost').replace(/:\d+$/, '');
+    let target = '';
+    try { target = app && app.url ? new URL(String(app.url).replace(/\{host\}/g, host)).href : ''; } catch { /* no address */ }
+    if (!target) return send(res, 404, 'text/plain', 'That app has no address yet.');
+    if (who.role === 'superadmin') return send(res, 302, 'text/plain', 'Opening', { Location: target });
+    const as = auth.levelFor(who.name, app);
+    if (!as) return send(res, 403, 'text/plain', 'That app has not been given to you. Ask a superadmin.');
+    if (app.sso && (as === 'reader' || as === 'writer')) {
+      const page = new URL(app.sso, target);
+      page.hash = `ticket=${auth.ssoPass(app.id, who.name, as)}`;
+      return send(res, 302, 'text/plain', 'Opening', { Location: page.href });
+    }
+    return send(res, 302, 'text/plain', 'Opening', { Location: target });
   }
 
   if (rel === 'login') rel = 'login.html';
@@ -262,7 +319,6 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, '0.0.0.0', () => {
   const people = auth.listUsers();
   const boss = people.filter((u) => u.role === 'superadmin').length;
-  const words = auth.wordsSet();
   console.log(`\nUniversal Dashboard running\n  on this PC   http://localhost:${PORT}`);
   for (const [name, addrs] of Object.entries(os.networkInterfaces())) {
     for (const a of addrs || []) {
@@ -271,14 +327,11 @@ server.listen(PORT, '0.0.0.0', () => {
   }
   const ways = [];
   if (people.length) ways.push(`${people.length} account${people.length > 1 ? 's' : ''} (${boss} superadmin)`);
-  if (words.reader) ways.push('a reader word');
-  if (words.viewer) ways.push('a viewer word');
   if (auth.config().googleClientId) ways.push('Google');
   console.log(ways.length ? `\n  Sign in with: ${ways.join(', ')}` : '\n  Nobody can sign in yet.');
   if (!boss) {
     console.log('  No superadmin yet, so /admin cannot be opened:\n'
-      + '    npm run user super <name>     make an existing account a superadmin\n'
-      + '    npm run user add <name>       add an account first, if there is none');
+      + '    npm run user super <name>     add a superadmin (asks for a password)');
   } else {
     console.log(`  Manage access at http://localhost:${PORT}/admin\n`);
   }

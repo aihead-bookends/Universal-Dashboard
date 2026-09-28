@@ -6,7 +6,7 @@
  *
  * Bump VERSION whenever SHELL changes.
  */
-const VERSION = 'unisis-v25';
+const VERSION = 'unisis-v29';
 const SHELL = [
   './', 'index.html', 'app.js', 'apps.js', 'smoke.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-mask.svg', 'icons/icon-180.png', 'icons/icon-192.png',
@@ -37,8 +37,8 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Sign-in calls and the login page always go to the network.
-  if (/\/(api|login)\b/.test(url.pathname)) return;
+  // Sign-in calls, the login page and opening an app (a one-time pass) always go to the network.
+  if (/\/(api|login|open)\b/.test(url.pathname)) return;
   if (url.origin === self.location.origin) {
     // Network first, so an edited apps.js shows on the next load; cache only as the offline fallback.
     e.respondWith(

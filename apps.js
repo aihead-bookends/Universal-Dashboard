@@ -15,6 +15,13 @@
  *           that PC or from a phone on the same Wi-Fi.
  *           Leave '' until the app has an address: the logo shows
  *           "Not connected" and cannot be opened.
+ *   login   leave it out for an app with its own sign-in: it has a reader and a writer account,
+ *           and each user is given one or the other at /admin. 'none' for an app anyone may
+ *           simply open: a user is given it or not, nothing more.
+ *   sso     for an app that can take a sign-in pass from the dashboard: the path of its page that
+ *           does, e.g. '/sso'. A user then lands in the app already signed in as the reader or
+ *           writer account they were given, with no email or password. Leave it out until that
+ *           page is live in the app (tools/sso/README.md): until then the app opens as it always has.
  */
 window.UNISIS_APPS = [
   { id: 'kostkraft',  name: 'Kostkraft',  tag: 'Cost & food control',
@@ -31,13 +38,13 @@ window.UNISIS_APPS = [
     icon: 'tally',      accent: '#A8D93A', url: 'https://scnhrk-capiche.onrender.com/' },
   { id: 'secretmenu', name: 'Secret Menu', tag: 'Capiche classified',
     desc: "Classified Menu Access — tonight's word unlocks the Capiche secret menu; the word is given out by phone only and expires each night.",
-    icon: 'lock',      accent: '#E5243B', url: 'https://bookends.capichesecretmenu.workers.dev/' },
+    icon: 'lock',      accent: '#E5243B', url: 'https://bookends.capichesecretmenu.workers.dev/', login: 'none' },
   { id: 'dispatch',   name: 'Dispatch',   tag: 'Delivery & dispatch',
     desc: 'Dispatch Control System — manages delivery, dispatch coordination, order movement and operational tracking.',
     icon: 'send',    accent: '#F2834A', url: 'https://dishpatch.mobioffice.io/' },
   { id: 'chucky',     name: 'Chucky',     tag: 'Menu management',
     desc: "Menu Intelligence System — menu editing and management across Capiche, Aiko, Churn'd & Beshak.",
-    icon: 'cat',      accent: '#FF4A3A', url: 'https://chucky-chi.vercel.app/' },
+    icon: 'cat',      accent: '#FF4A3A', url: 'https://chucky-chi.vercel.app/', login: 'none' },
   { id: 'ordergenie', name: 'OrderGenie', tag: 'Ordering & procurement',
     desc: 'Procurement Intelligence System — compares supplier pricing, manages purchasing and controls food-cost decisions.',
     icon: 'chart',  accent: '#9B8CFF', url: 'https://ordergenie.bookends.co.in/' },

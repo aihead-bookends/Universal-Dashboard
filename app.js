@@ -79,9 +79,13 @@
     const status = make('span', 'status');
     status.append(make('span', 'dot'), make('span', 'label'));
     meta.append(status);
+    // Which of the app's two accounts it opens as for this person, when that has been decided.
+    if (app.as === 'reader' || app.as === 'writer') meta.append(make('span', 'as', app.as === 'writer' ? 'Writer' : 'Reader'));
 
     if (href) {
-      tile.href = href;
+      // An app given as reader or writer opens through the dashboard, which checks the level and,
+      // where the app can take one, hands it a sign-in pass for that account.
+      tile.href = app.as ? `open/${encodeURIComponent(app.id)}` : href;
       tile.target = '_blank';
       tile.rel = 'noopener';
       tile.setAttribute('aria-label', `Open ${app.name}`);
@@ -370,14 +374,14 @@
     try {
       const res = await fetch("api/me", { headers: { Accept: "application/json" } });
       if (!res.ok) return;
-      const { name, role } = await res.json();
-      // A shared word signs in as the role itself, so "reader (reader)" would read oddly.
-      who.append(name === role ? `Signed in with the ${role} word` : `Signed in as ${name} (${role})`);
+      const { name, role, changeWord, hasWord } = await res.json();
+      who.append(role === "superadmin" ? `Signed in as ${name} (superadmin)` : `Signed in as ${name}`);
       if (role === "superadmin") {
         const manage = make("a", "", "Access");
         manage.href = "admin";
         who.append(manage);
       }
+      if (changeWord) who.append(wordChanger(hasWord));
       const out = make("button", "", "Sign out");
       out.type = "button";
       out.addEventListener("click", async () => {
@@ -388,6 +392,65 @@
       who.hidden = false;
     } catch { /* no sign-in behind this copy of the dashboard */ }
   })();
+
+  // A user's own access word: a button beside Sign out opens a sheet asking for the word they have
+  // now and the new one twice. The server checks the old word, and keeps the new one where a
+  // superadmin can see it; this device stays signed in.
+  function wordChanger(hasWord) {
+    const sheet = $("#wordSheet");
+    const msg = $("#wordMsg");
+    const save = $("#wordSave");
+    const fields = ["#wordNow", "#wordNew", "#wordAgain"].map((s) => $(s));
+    const open = make("button", "", "Change word");
+    open.type = "button";
+    if (!hasWord) {
+      // From before words: they prove it is them with their password, and choose a word to use instead.
+      $("#wordNowLabel").textContent = "Your password now";
+      open.textContent = "Choose a word";
+    }
+    const say = (text, ok = false) => {
+      msg.textContent = text;
+      msg.toggleAttribute("data-ok", ok);
+    };
+    const close = () => {
+      sheet.hidden = true;
+      fields.forEach((f) => { f.value = ""; });
+      say("");
+      open.focus();
+    };
+    open.addEventListener("click", () => {
+      sheet.hidden = false;
+      fields[0].focus();
+    });
+    $("#wordCancel").addEventListener("click", close);
+    sheet.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    sheet.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const [now, next, again] = fields.map((f) => f.value);
+      if (next !== again) { say("The two new words are not the same."); fields[2].select(); return; }
+      save.disabled = true;
+      say("Saving…");
+      try {
+        const res = await fetch("api/me/word", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ current: now, next }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { say(data.error || "That did not work. Try again."); return; }
+        fields.forEach((f) => { f.value = ""; });
+        say("Done. Use your new word next time you sign in.", true);
+        $("#wordNowLabel").textContent = "Your word now";
+        open.textContent = "Change word";
+        setTimeout(() => { if (!sheet.hidden) close(); }, 2200);
+      } catch {
+        say("The dashboard is not answering. Try again.");
+      } finally {
+        save.disabled = false;
+      }
+    });
+    return open;
+  }
 
   /* ----------------------------------------------------------- install */
   const installBtn = $('#install');

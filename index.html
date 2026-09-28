@@ -208,6 +208,7 @@ html.arriving .wrap{opacity:0}
 .meta{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:18px;
   font:400 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .tile.flip .meta{flex-direction:row-reverse}
+.as{flex:none;padding:3px 9px;border:1px solid var(--line2);border-radius:999px;font-size:9.5px;letter-spacing:.16em;color:var(--dim)}
 .status{display:inline-flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .label{overflow:hidden;text-overflow:ellipsis}
 .dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--faint)}
@@ -241,6 +242,15 @@ html.arriving .wrap{opacity:0}
 .sheet p{margin:8px 0 0;color:var(--dim);font-size:14px;line-height:1.55}
 .sheet button{margin-top:16px;width:100%;min-height:46px;border:0;border-radius:999px;background:var(--text);color:#fff;
   font:500 11.5px var(--mono);letter-spacing:.18em;text-transform:uppercase;cursor:pointer}
+/* a user changing their own access word: the same sheet, with fields */
+.sheet label{display:block;margin-top:14px;font:400 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.sheet input{display:block;width:100%;margin-top:6px;height:46px;padding:0 14px;border:1px solid var(--line2);border-radius:12px;
+  background:#fff;color:var(--text);font:15px var(--mono);outline:0}
+.sheet input:focus{border-color:rgba(168,125,28,.6);box-shadow:0 0 0 4px rgba(232,185,74,.18)}
+.sheet .msg{min-height:18px;margin:12px 0 0;font:400 12px/1.5 var(--mono);color:var(--warn)}
+.sheet .msg[data-ok]{color:var(--ok)}
+.sheet button.quiet{margin-top:8px;background:none;color:var(--muted);border:1px solid var(--line2)}
+.sheet button[disabled]{opacity:.55;cursor:default}
 
 /* phones: logos hug the edges, details take the rest of the line */
 @media (max-width:640px){
@@ -301,6 +311,20 @@ html.arriving .wrap{opacity:0}
 </main>
 
 <footer class="foot">Bookends Pvt Ltd · Surat &amp; Ahmedabad<span class="who" id="who" hidden></span></footer>
+
+<form class="sheet" id="wordSheet" role="dialog" aria-modal="true" aria-labelledby="wordTitle" autocomplete="off" hidden>
+  <h2 id="wordTitle">Change your access word</h2>
+  <p>Your old word stops working as soon as you save. You stay signed in here; anywhere else, sign in with the new one.</p>
+  <label for="wordNow" id="wordNowLabel">Your word now</label>
+  <input id="wordNow" type="password" autocomplete="current-password" required>
+  <label for="wordNew">New word</label>
+  <input id="wordNew" type="password" autocomplete="new-password" required>
+  <label for="wordAgain">New word again</label>
+  <input id="wordAgain" type="password" autocomplete="new-password" required>
+  <p class="msg" id="wordMsg" role="status" aria-live="polite"></p>
+  <button type="submit" id="wordSave">Save new word</button>
+  <button type="button" class="quiet" id="wordCancel">Cancel</button>
+</form>
 
 <div class="sheet" id="iosSheet" role="dialog" aria-labelledby="iosTitle" hidden>
   <h2 id="iosTitle">Add to Home Screen</h2>

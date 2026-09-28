@@ -57,15 +57,24 @@ tr:last-child td{border-bottom:0}
 .tagrole{display:inline-block;padding:3px 10px;border-radius:999px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
   border:1px solid var(--line2);color:var(--dim)}
 .tagrole[data-r="superadmin"]{border-color:rgba(168,125,28,.5);color:#7A5A12;background:rgba(232,185,74,.16)}
-.tagrole[data-r="admin"]{border-color:rgba(47,158,85,.4);color:#22713D;background:rgba(47,158,85,.12)}
-/* one person's exceptions, folded out under their row */
+.tagrole[data-r="user"]{border-color:rgba(47,158,85,.4);color:#22713D;background:rgba(47,158,85,.12)}
+/* one user's apps, folded out under their row */
 tr.own td{padding-top:0}
 .own .box{margin:2px 0 10px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:rgba(28,28,31,.03)}
 .own h3{margin:0 0 10px;font:400 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
 .own .app{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:5px 0}
 .own .app span{font-family:var(--serif);font-size:14px}
-.own select{height:34px}
-.exception{margin-left:8px;font-size:10px;color:var(--muted)}
+.count{margin-left:8px;font-size:10px;color:var(--muted)}
+.secret{font:500 13px var(--mono);letter-spacing:.06em;color:var(--text);user-select:all;word-break:break-all}
+/* no / reader / writer (or no / yes), side by side: the one in force filled in */
+.pick{display:inline-flex;border:1px solid var(--line2);border-radius:999px;padding:2px;gap:2px}
+.pick button{min-height:30px;padding:0 16px;border-radius:999px;background:none;color:var(--muted);
+  font:500 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase}
+.pick button:hover{box-shadow:none;color:var(--text)}
+.pick button[aria-pressed="true"]{background:var(--text);color:#fff}
+.pick button.no[aria-pressed="true"]{background:#8A2E22}
+.pick button.writer[aria-pressed="true"]{background:#8C6A18}
+.own .app small{display:block;margin-top:2px;font:400 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 
 input,select{height:40px;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:#fff;
   color:var(--text);font:13px var(--mono);outline:0}
@@ -96,55 +105,48 @@ form.row{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center
 <main>
   <p class="eyebrow">Bookends · Universal Dashboard</p>
   <h1>Who has <em>access</em></h1>
-  <p class="lede">Superadmins and admins each have their own account. Readers and viewers share one access
-    word each — change a word and everyone holding the old one is signed out.</p>
+  <p class="lede">Superadmins sign in with a name and a password and see every app. Users sign in with an
+    access word of their own and see only the apps you say yes to for them.</p>
   <a class="back" href="./">← Back to the dashboard</a>
 
   <section>
     <h2>People</h2>
-    <p class="hint">A superadmin can open this page and manage access. An admin can open the dashboard and
-      whatever apps admins are allowed. Adding a name that already exists sets a new password for it.
-      <b>Apps</b> opens that person's own exceptions: one app given to them alone, or taken away from them
-      alone, whatever their role says.</p>
+    <p class="hint">To add a user, give them a name — so you know who is who — and an access word; the word is
+      all they type to sign in, so no two users can share one. <b>Show word</b> tells you a user's word, to
+      pass on; each look is written into the sign-ins below. Press <b>Apps</b> beside a user
+      and choose, app by app: <b>No</b>, or <b>Reader</b> or <b>Writer</b> — which of the app's two
+      accounts it opens as for them. An app with no sign-in of its own is just yes or no. An app someone may not see is not sent to their browser at all — not its name, not its
+      address. Adding a name that already exists gives it a new word or password, and signs them out
+      wherever they used the old one.</p>
     <table>
       <thead><tr><th>Name</th><th>Role</th><th>Added</th><th></th></tr></thead>
       <tbody id="people"></tbody>
     </table>
     <form class="row" id="addForm">
       <input id="addName" placeholder="name" autocapitalize="none" spellcheck="false" required>
-      <input id="addPass" type="password" placeholder="password" required>
-      <select id="addRole"><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select>
+      <input id="addSecret" type="password" placeholder="access word" autocomplete="new-password" required>
+      <select id="addRole" aria-label="Kind of account"><option value="user">User</option><option value="superadmin">Superadmin</option></select>
       <button type="submit">Add or reset</button>
     </form>
     <p class="note" id="peopleNote" role="status" aria-live="polite"></p>
   </section>
 
   <section>
-    <h2>Shared access words</h2>
-    <p class="hint">One word for every reader, one for every viewer. Anyone with the word is in, so there is no
-      telling who used it — rotate them when someone leaves.</p>
+    <h2>Sign-in keys</h2>
+    <p class="hint">How an app signs a user straight in as its reader or writer account, with no email or
+      password: the dashboard hands it a pass, signed with that app's own key. <b>Show key</b>, then put the
+      key in the app's settings as <b>UNISIS_SSO_KEY</b>; once the app's sign-in page is live, add
+      <b>sso: '/sso'</b> to it in apps.js. Until then the app opens as it always has. Each look is logged.</p>
     <table>
-      <thead><tr><th>Word</th><th>Last set</th><th></th></tr></thead>
-      <tbody id="words"></tbody>
+      <thead><tr><th>App</th><th>Sign-in link</th><th></th></tr></thead>
+      <tbody id="keys"></tbody>
     </table>
-    <p class="note" id="wordNote" role="status" aria-live="polite"></p>
-  </section>
-
-  <section>
-    <h2>Which apps each role sees</h2>
-    <p class="hint">The lowest role that may see an app. Anything higher sees it too. An app someone may not see
-      is not sent to their browser at all — not its name, not its address. New apps start at admin. Set an app to
-      <b>superadmins</b> to keep it closed by default and hand it out person by person under <b>Apps</b> above.</p>
-    <table>
-      <thead><tr><th>App</th><th>Seen by</th></tr></thead>
-      <tbody id="apps"></tbody>
-    </table>
-    <p class="note" id="appNote" role="status" aria-live="polite"></p>
+    <p class="note" id="keyNote" role="status" aria-live="polite"></p>
   </section>
 
   <section>
     <h2>Recent sign-ins</h2>
-    <p class="hint">The last forty attempts, newest first. A shared word shows only as "reader" or "viewer".</p>
+    <p class="hint">The last forty attempts, newest first.</p>
     <div class="log" id="log"></div>
   </section>
 </main>
@@ -153,8 +155,7 @@ form.row{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const ROLES = ['viewer', 'reader', 'admin', 'superadmin'];
-  const opened = new Set(); // people whose own apps are folded out
+  const opened = new Set(); // users whose apps are folded out
 
   const say = (el, message, ok = false) => {
     el.textContent = message;
@@ -191,94 +192,72 @@ form.row{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center
       tr.append(roleCell, make('td', u.added || '—', 'when'));
 
       const actions = make('td');
-      // Their own exceptions, folded out under the row.
-      const own = make('button', 'Apps', 'quiet');
       const fold = document.createElement('tr');
       fold.className = 'own';
       const cell = make('td');
       cell.colSpan = 4;
       fold.append(cell);
-      // Whoever was folded out stays folded out when the page redraws after a change.
-      fold.hidden = !opened.has(u.name);
-      if (!fold.hidden) drawOwn(cell, u, state);
-      own.onclick = () => {
-        fold.hidden = !fold.hidden;
-        if (fold.hidden) opened.delete(u.name);
-        else { opened.add(u.name); drawOwn(cell, u, state); }
-      };
-      const count = Object.keys(u.apps || {}).length;
-      actions.append(own);
-      if (count) actions.append(make('span', count === 1 ? '1 exception' : count + ' exceptions', 'exception'));
+      fold.hidden = true;
+      if (u.role === 'superadmin') {
+        actions.append(make('span', 'sees every app', 'when'));
+      } else {
+        // Their apps, folded out under the row; whoever was open stays open when the page redraws.
+        const own = make('button', 'Apps', 'quiet');
+        fold.hidden = !opened.has(u.name);
+        own.setAttribute('aria-expanded', String(!fold.hidden));
+        if (!fold.hidden) drawApps(cell, u, state);
+        own.onclick = () => {
+          fold.hidden = !fold.hidden;
+          own.setAttribute('aria-expanded', String(!fold.hidden));
+          if (fold.hidden) opened.delete(u.name);
+          else { opened.add(u.name); drawApps(cell, u, state); }
+        };
+        const n = Object.keys(u.apps).length;
+        actions.append(own, make('span', `${n} of ${state.apps.length} apps`, 'count'));
+        if (!u.word) actions.append(make('span', ' · signs in with a password', 'count'));
+        else actions.append(' ', wordCell(u));
+      }
       actions.append(' ');
       if (u.name !== state.me) {
-        const swap = make('button', u.role === 'superadmin' ? 'Make admin' : 'Make superadmin', 'quiet');
-        swap.onclick = () => run($('peopleNote'), () =>
-          call('api/admin/user', { action: 'role', name: u.name, role: u.role === 'superadmin' ? 'admin' : 'superadmin' }));
         const gone = make('button', 'Remove', 'quiet');
         gone.onclick = () => {
           if (!confirm(`Remove ${u.name}? They will be signed out and cannot sign in again.`)) return;
-          run($('peopleNote'), () => call('api/admin/user', { action: 'remove', name: u.name }));
+          opened.delete(u.name);
+          run($('peopleNote'), () => call('api/admin/user', { action: 'remove', name: u.name }), `${u.name} is removed.`);
         };
-        actions.append(swap, ' ', gone);
+        actions.append(gone);
       } else {
-        actions.append(make('span', 'that is you', 'when'));
+        actions.append(make('span', u.role === 'superadmin' ? '· that is you' : 'that is you', 'when'));
       }
       tr.append(actions);
       people.append(tr, fold);
     });
 
-    // Shared words
-    const words = $('words');
-    words.replaceChildren();
-    ['reader', 'viewer'].forEach((kind) => {
+    // Sign-in keys, for the apps with reader and writer accounts
+    const keys = $('keys');
+    keys.replaceChildren();
+    state.apps.filter((app) => app.login !== 'none').forEach((app) => {
       const tr = document.createElement('tr');
-      tr.append(make('td', kind, 'name'));
-      tr.append(make('td', state.words[kind] ? new Date(state.words[kind]).toLocaleString() : 'not in use', 'when'));
-
+      tr.append(make('td', app.name, 'name'),
+        make('td', app.sso ? 'on: users land signed in' : 'not yet: opens its own login', 'when'));
       const cell = make('td');
-      const field = document.createElement('input');
-      field.type = 'password';
-      field.placeholder = `new ${kind} word`;
-      field.autocomplete = 'new-password';
-      const set = make('button', 'Set');
-      set.onclick = () => run($('wordNote'), async () => {
-        await call('api/admin/word', { kind, word: field.value });
-        field.value = '';
-      }, `The ${kind} word is set. Anyone holding the old one is signed out.`);
-      cell.append(field, ' ', set);
-      if (state.words[kind]) {
-        const off = make('button', 'Take out of use', 'quiet');
-        off.onclick = () => {
-          if (!confirm(`Take the ${kind} word out of use? Everyone using it is signed out.`)) return;
-          run($('wordNote'), () => call('api/admin/word', { kind, clear: true }));
-        };
-        cell.append(' ', off);
-      }
+      const show = make('button', app.key ? 'Show key' : 'Make key', 'quiet');
+      show.onclick = async () => {
+        show.disabled = true;
+        try {
+          const { key } = await call('api/admin/ssokey', { id: app.id });
+          const hide = make('button', 'Hide', 'quiet');
+          hide.onclick = () => cell.replaceChildren(show);
+          cell.replaceChildren(make('span', key, 'secret'), ' ', hide);
+        } catch (err) {
+          say($('keyNote'), err.message);
+        } finally {
+          show.disabled = false;
+        }
+      };
+      cell.append(show);
       tr.append(cell);
-      words.append(tr);
-    });
-
-    // Per-app access
-    const apps = $('apps');
-    apps.replaceChildren();
-    state.apps.forEach((app) => {
-      const tr = document.createElement('tr');
-      tr.append(make('td', app.name, 'name'));
-      const cell = make('td');
-      const pick = document.createElement('select');
-      ROLES.forEach((role) => {
-        const opt = document.createElement('option');
-        opt.value = role;
-        opt.textContent = { viewer: 'Everyone (viewer and up)', reader: 'Readers and up', admin: 'Admins only',
-          superadmin: 'Superadmins, and anyone named below' }[role];
-        opt.selected = app.role === role;
-        pick.append(opt);
-      });
-      pick.onchange = () => run($('appNote'), () => call('api/admin/policy', { id: app.id, role: pick.value }),
-        `${app.name}: ${pick.options[pick.selectedIndex].textContent.toLowerCase()}.`);
-      cell.append(pick);
-      tr.append(cell);
-      apps.append(tr);
+      keys.append(tr);
     });
 
     // The log
@@ -294,26 +273,79 @@ form.row{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center
     });
   }
 
-  // Every app, and what this person's own rule for it is: their role's answer, or an exception.
-  function drawOwn(cell, user, state) {
+  // A user's word, hidden until asked for. It is fetched on the press, not sent with the page, and
+  // the look is logged; Hide puts it away again.
+  function wordCell(user) {
+    const box = make('span');
+    const show = make('button', 'Show word', 'quiet');
+    show.onclick = async () => {
+      show.disabled = true;
+      try {
+        const { word } = await call('api/admin/reveal', { name: user.name });
+        const hide = make('button', 'Hide', 'quiet');
+        hide.onclick = () => box.replaceChildren(show);
+        if (word) {
+          box.replaceChildren(make('span', word, 'secret'), ' ', hide);
+          return;
+        }
+        // Saved before words could be shown: only a one-way hash of it is kept. Typing it once more,
+        // here, keeps a readable copy; their current word signs nobody out, a new one does.
+        const field = document.createElement('input');
+        field.type = 'text';
+        field.placeholder = 'type their word again';
+        field.autocomplete = 'off';
+        field.spellcheck = false;
+        const save = make('button', 'Save');
+        save.onclick = () => {
+          if (!field.value) { field.focus(); return; }
+          run($('peopleNote'), () => call('api/admin/user', { name: user.name, secret: field.value, role: 'user' }),
+            `${user.name}'s word is saved. Show word will show it from now on.`);
+        };
+        field.onkeydown = (e) => { if (e.key === 'Enter') save.click(); };
+        box.replaceChildren(field, ' ', save, ' ', hide);
+        field.focus();
+      } catch (err) {
+        say($('peopleNote'), err.message);
+      } finally {
+        show.disabled = false;
+      }
+    };
+    box.append(show);
+    return box;
+  }
+
+  // Every app, and what this user has of it. An app with its own sign-in is given as its reader or
+  // its writer account; one without is simply given or not. The level in force is filled in.
+  const CHOICES = {
+    accounts: [['no', 'No'], ['reader', 'Reader'], ['writer', 'Writer']],
+    none: [['no', 'No'], ['yes', 'Yes']],
+  };
+  const SAID = { no: 'taken from', yes: 'given to', reader: 'reader access for', writer: 'writer access for' };
+  function drawApps(cell, user, state) {
     const box = make('div', '', 'box');
-    box.append(make('h3', user.name + " — apps for this person only"));
+    box.append(make('h3', `${user.name} — which apps they see, and as whom`));
     state.apps.forEach((app) => {
+      const has = user.apps[app.id];
+      // A plain yes on an app with a sign-in, from before there were two levels, reads as reader.
+      const now = !has ? 'no' : app.login === 'none' ? 'yes' : has === 'writer' ? 'writer' : 'reader';
       const row = make('div', '', 'app');
-      const byRole = ROLES.indexOf(user.role) >= ROLES.indexOf(app.role);
-      row.append(make('span', app.name));
-      const pick = document.createElement('select');
-      [['', 'Their role decides (' + (byRole ? 'sees it' : 'does not') + ')'], ['allow', 'Always give it to them'], ['deny', 'Never give it to them']]
-        .forEach(([value, label]) => {
-          const opt = document.createElement('option');
-          opt.value = value;
-          opt.textContent = label;
-          opt.selected = (user.apps || {})[app.id] === value || (!((user.apps || {})[app.id]) && value === '');
-          pick.append(opt);
-        });
-      pick.onchange = () => run($('peopleNote'), () => call('api/admin/userapp', { name: user.name, id: app.id, rule: pick.value }),
-        pick.value === '' ? app.name + ': back to what ' + user.name + "'s role says."
-          : app.name + ': ' + (pick.value === 'allow' ? 'always' : 'never') + ' for ' + user.name + '.');
+      const label = make('span', app.name);
+      if (app.login === 'none') label.append(make('small', 'no sign-in'));
+      row.append(label);
+      const pick = make('div', '', 'pick');
+      pick.setAttribute('role', 'group');
+      pick.setAttribute('aria-label', `${app.name} for ${user.name}`);
+      CHOICES[app.login === 'none' ? 'none' : 'accounts'].forEach(([level, text]) => {
+        const b = make('button', text, level);
+        b.type = 'button';
+        b.setAttribute('aria-pressed', String(now === level));
+        b.onclick = () => {
+          if (now === level) return;
+          run($('peopleNote'), () => call('api/admin/userapp', { name: user.name, id: app.id, level }),
+            `${app.name}: ${SAID[level]} ${user.name}.`);
+        };
+        pick.append(b);
+      });
       row.append(pick);
       box.append(row);
     });
@@ -337,13 +369,21 @@ form.row{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center
     return state;
   }
 
+  // A user is given an access word, a superadmin a password: the field says which it is asking for.
+  $('addRole').addEventListener('change', () => {
+    $('addSecret').placeholder = $('addRole').value === 'superadmin' ? 'password' : 'access word';
+  });
+
   $('addForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    const name = $('addName').value.trim().toLowerCase();
+    const role = $('addRole').value;
     run($('peopleNote'), async () => {
-      await call('api/admin/user', { name: $('addName').value, password: $('addPass').value, role: $('addRole').value });
+      await call('api/admin/user', { name, secret: $('addSecret').value, role });
       $('addName').value = '';
-      $('addPass').value = '';
-    }, 'Saved.');
+      $('addSecret').value = '';
+    }, role === 'superadmin' ? `${name} is a superadmin.`
+      : `${name} can sign in with that word. Press Apps beside them to give them apps.`);
   });
 
   load().catch((err) => say($('peopleNote'), err.message));
