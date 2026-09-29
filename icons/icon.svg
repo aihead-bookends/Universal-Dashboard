@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- The mark alone, on a transparent background: a pointed hexagon cut into three upright slices,
+       parted by negative space. The middle slice keeps both points, the outer two are cut on the
+       hexagon's slanted edges, and the whole thing leans: skewY tips it, the translate re-centres it.
+       icon-mask.svg is the same mark on a dark ground, for Android's maskable icon. -->
+  <!-- Brand gold, so the mark carries on a light tab strip and on a dark taskbar alike; an SVG used
+       as an image ignores the page colour scheme, so a light/dark swap cannot be relied on here. -->
+  <g fill="#D8A94A" transform="translate(0 27) skewY(-6)">
+    <path d="M130 156 198 110 198 402 130 356Z"/>
+    <path d="M224 92 256 70 288 92 288 420 256 442 224 420Z"/>
+    <path d="M314 110 382 156 382 356 314 402Z"/>
+  </g>
+</svg>

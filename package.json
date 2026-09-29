@@ -1,0 +1,14 @@
+{
+  "name": "unisis",
+  "version": "1.0.0",
+  "description": "Bookends Universal Dashboard — one installable launcher for every app (mobile + desktop PWA)",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "build:icons": "node tools/build-icons.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
