@@ -30,6 +30,8 @@
       + '<rect x="112" y="62" width="26" height="15" fill="currentColor" stroke="none"/></g>',
     // OrderGenie: service rising, counted off a baseline.
     chart: '<path d="M5.5 19h13"/><path d="M8 16v-4M12 16V9M16 16V6"/>',
+    // Niyukti: an ID card with its holder, a new hire placed.
+    badge: '<rect x="4.5" y="6" width="15" height="12" rx="2"/><circle cx="9.5" cy="11" r="1.8"/><path d="M6.8 15.5a2.7 2.7 0 0 1 5.4 0"/><path d="M14.5 10.5h3M14.5 13.5h2"/>',
     // Anything unknown: four modules on the grid.
     grid: '<rect x="4.5" y="4.5" width="6" height="6" rx="1.5"/><rect x="13.5" y="4.5" width="6" height="6" rx="1.5"/><rect x="4.5" y="13.5" width="6" height="6" rx="1.5"/><rect x="13.5" y="13.5" width="6" height="6" rx="1.5"/>',
   };
