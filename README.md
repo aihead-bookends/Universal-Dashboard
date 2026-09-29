@@ -75,3 +75,12 @@ There is no sign-in. Anyone who can reach the dashboard sees every app in `apps.
 It is plain static files, so any host works: Cloudflare Pages, Netlify, or next to
 Chucky by copying the folder into `chucky-krish/deploy/public/unisis/`. Serve
 `index.html`, `app.js`, `apps.js`, `sw.js`, `manifest.webmanifest` and `icons/`.
+
+### Vercel
+
+`vercel.json` and `.vercelignore` are set up: no build, the repo root is served as static
+files, and every file revalidates on each load so an edited `apps.js` shows at once.
+
+1. On <https://vercel.com/new>, import `bookendskg/Universal-Dashboard`.
+2. Leave Framework Preset as **Other** and the build settings empty; click **Deploy**.
+3. Every push to `main` redeploys. Add a custom domain under Project → Settings → Domains.
