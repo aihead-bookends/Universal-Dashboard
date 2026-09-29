@@ -6,7 +6,7 @@
  *
  * Bump VERSION whenever SHELL changes.
  */
-const VERSION = 'unisis-v37';
+const VERSION = 'unisis-v38';
 const SHELL = [
   './', 'index.html', 'app.js', 'apps.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-mask.svg', 'icons/icon-180.png', 'icons/icon-192.png',
