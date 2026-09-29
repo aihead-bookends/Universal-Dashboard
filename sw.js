@@ -6,9 +6,9 @@
  *
  * Bump VERSION whenever SHELL changes.
  */
-const VERSION = 'unisis-v29';
+const VERSION = 'unisis-v31';
 const SHELL = [
-  './', 'index.html', 'app.js', 'apps.js', 'smoke.js', 'manifest.webmanifest',
+  './', 'index.html', 'app.js', 'apps.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-mask.svg', 'icons/icon-180.png', 'icons/icon-192.png',
   'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/bookends-hospitality.png',
 ];

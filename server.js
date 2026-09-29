@@ -7,8 +7,10 @@
  *   PORT=5000 npm start
  *
  * Only the dashboard's public files are served, never server.js, users.json or tools/.
- * Until a request carries a valid session cookie, the only things served are the login
- * page and what it needs; the dashboard, the app list and the scripts are refused.
+ * The dashboard itself is open: anyone who can reach it sees it, with every app, and no sign-in.
+ * Only the console at /admin asks for one — a superadmin's name and password — and sends anyone
+ * else to /login first. Someone who does sign in (a user with their word, at /login) still gets
+ * just their own apps.
  *
  * Accounts (auth.js): superadmins, who sign in with a password and see every app, and users, who
  * sign in with an access word of their own and see the apps a superadmin has said yes to for them.
@@ -29,9 +31,7 @@ const auth = require('./auth.js');
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT) || 4000;
 
-const PUBLIC = new Set(['index.html', 'app.js', 'apps.js', 'sw.js', 'manifest.webmanifest', 'login.html', 'admin.html', 'smoke.js']);
-// Served before signing in: the login page, and the icons a browser asks for early.
-const OPEN = new Set(['login.html', 'manifest.webmanifest']);
+const PUBLIC = new Set(['index.html', 'app.js', 'apps.js', 'sw.js', 'manifest.webmanifest', 'login.html', 'admin.html']);
 // Superadmins only.
 const CONSOLE = new Set(['admin.html']);
 const TYPES = {
@@ -108,7 +108,8 @@ function allApps() {
   return cached.apps;
 }
 
-const appsFor = (who) => `window.UNISIS_APPS = ${JSON.stringify(auth.visibleFor(who, allApps()), null, 2)};\n`;
+// Signed in, a person gets their own apps; not signed in, a visitor gets every app.
+const appsFor = (who) => `window.UNISIS_APPS = ${JSON.stringify(who ? auth.visibleFor(who, allApps()) : allApps(), null, 2)};\n`;
 
 const server = http.createServer(async (req, res) => {
   let rel;
@@ -290,10 +291,11 @@ const server = http.createServer(async (req, res) => {
   if (!PUBLIC.has(rel) && !isIcon(rel)) return send(res, 404, 'text/plain', 'Not found');
 
   /* --------------------------------------------------------- the gate */
-  if (!who && !OPEN.has(rel) && !isIcon(rel)) {
-    // A page request goes to the login page; anything else is simply refused.
+  // Only the console is behind it. Asking for /admin without signing in goes to the login page,
+  // which comes back here once a superadmin has signed in.
+  if (!who && CONSOLE.has(rel)) {
     const wantsPage = (req.headers.accept || '').includes('text/html');
-    if (wantsPage) return send(res, 302, 'text/plain', 'Sign in first', { Location: '/login' });
+    if (wantsPage) return send(res, 302, 'text/plain', 'Sign in first', { Location: '/login?next=admin' });
     return send(res, 401, 'text/plain', 'Sign in first');
   }
   // Signed in already? Then the login page is just a detour back to the dashboard.

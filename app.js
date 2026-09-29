@@ -157,8 +157,6 @@
     landed: false,
     light: '', // the shadow values last written, so an unchanged frame writes nothing
   }));
-  const flightOf = new Map(flights.map((f) => [f.tile, f]));
-  const landed = (tile) => flightOf.get(tile).shown > 0.97;
 
   // One studio light for the whole page, overhead and a touch to the left, so every shadow falls
   // beneath its logo and leans a little to the right. It follows the scroll: a logo in the middle

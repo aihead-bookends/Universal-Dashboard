@@ -152,7 +152,8 @@ button[disabled]{opacity:.55;cursor:default;transform:none}
     prepareDashboard();
     document.body.classList.add('jump');
     await new Promise((done) => setTimeout(done, 550));
-    location.replace('./');
+    // Sent here from /admin: back to it. Otherwise on to the dashboard.
+    location.replace(new URLSearchParams(location.search).get('next') === 'admin' ? 'admin' : './');
   }
 
   function prepareDashboard() {
