@@ -1,0 +1,6 @@
+# Serve only the dashboard's public files (the same set server.js serves locally).
+server.js
+package.json
+tools/
+UNISIS/
+README.md
