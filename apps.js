@@ -7,7 +7,7 @@
  *   name    the app's name
  *   tag     two or three words on what it is, shown above the description
  *   desc    the system line: what the app runs, in one sentence
- *   icon    cube | lens | rotate | tally | lock | send | cat | chart | grid
+ *   icon    cube | lens | rotate | tally | lock | send | cat | chart | badge | grid
  *   accent  logo colour (hex); keep it bright, the logos sit on a near-black background
  *   url     where OPEN goes. Either a full address, or a template where {host}
  *           is replaced by the machine the dashboard was opened from — so
@@ -41,4 +41,7 @@ window.UNISIS_APPS = [
   { id: 'ordergenie', name: 'OrderGenie', tag: 'Ordering & procurement',
     desc: 'Procurement Intelligence System — compares supplier pricing, manages purchasing and controls food-cost decisions.',
     icon: 'chart',  accent: '#9B8CFF', url: 'https://ordergenie.bookends.co.in/' },
+  { id: 'niyukti',    name: 'Niyukti',    tag: 'Hiring & onboarding',
+    desc: 'Recruitment System — manages job openings, candidates, interviews and onboarding of new staff.',
+    icon: 'badge',  accent: '#3FD0B0', url: 'https://niyukti.bookends.co.in/' },
 ];
