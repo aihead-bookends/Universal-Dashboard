@@ -19,15 +19,6 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png?v=5">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script>
-  // Arriving from the sign-in? Hold the page content back a beat, then let it come up.
-  try {
-    if (sessionStorage.getItem('unisis-arriving')) {
-      sessionStorage.removeItem('unisis-arriving');
-      document.documentElement.classList.add('arriving');
-    }
-  } catch { /* private mode: no fade, just the dashboard */ }
-</script>
 <style>
 /* A light studio backdrop: white at the top, falling off to soft grey at the edges. Lora + DM Mono. */
 :root{
@@ -46,7 +37,7 @@
 html{background:var(--paper);scroll-behavior:smooth}
 /* The background runs to the edges of the window, and a scrollbar cuts a grey stripe through it.
    Hidden, not disabled: the wheel, touch, keyboard and the scroll-driven logo flights all work
-   exactly as before, and the cue under the headline says there is more below. */
+   exactly as before. */
 html{scrollbar-width:none}
 html::-webkit-scrollbar{width:0;height:0}
 body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;overflow-x:hidden;
@@ -55,20 +46,10 @@ body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:col
 /* The background: a seamless studio sweep — bright white at the top centre, where the light is,
    falling off to soft grey toward the edges and furthest into the bottom corners. No texture.
    Plain CSS on a fixed layer, so it paints once and the page scrolls over it, the way a backdrop
-   stays put behind a subject. The login page uses exactly the same layer. */
+   stays put behind a subject. */
 .space{position:fixed;inset:0;z-index:0;pointer-events:none;background-color:var(--paper);
   background-image:radial-gradient(ellipse 80% 62% at 50% -6%,#FFFFFF 0%,rgba(255,255,255,0) 72%),
     radial-gradient(ellipse 135% 108% at 50% 8%,#F8F8F7 0%,#EBEBE9 40%,#D6D6D3 72%,#C1C1BE 100%)}
-/* Arriving from the sign-in: only the page content arrives, over the same background. */
-.wrap{transition:opacity .7s cubic-bezier(.4,0,.2,1) .15s}
-html.arriving .wrap{opacity:0}
-
-/* install: beside the search; app.js shows it only when the browser can install the page */
-.install{flex:none;min-height:54px;padding:0 22px;border-radius:999px;border:1px solid var(--line2);background:rgba(255,255,255,.7);
-  color:var(--text);font:500 10.5px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;cursor:pointer;
-  transition:background-color .4s var(--ease),border-color .4s var(--ease)}
-.install:hover{background:#fff;border-color:rgba(28,28,31,.3);box-shadow:0 12px 26px -16px rgba(28,28,31,.45)}
-.install:focus-visible{outline:1px solid var(--text);outline-offset:3px}
 
 /* page */
 /* full width: the margin grows with the screen instead of parking everything in a 920px column */
@@ -76,7 +57,7 @@ html.arriving .wrap{opacity:0}
   padding:0 calc(clamp(24px,5vw,96px) + var(--safe-r)) 24px calc(clamp(24px,5vw,96px) + var(--safe-l))}
 
 /* hero: nearly a full screen before the apps */
-.hero{min-height:92svh;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;padding:calc(48px + var(--safe-t)) 0 clamp(36px,8vh,88px)}
+.hero{min-height:92svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:calc(48px + var(--safe-t)) 0 clamp(64px,14vh,160px)}
 .eyebrow{margin:0;font:400 11px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
 .eyebrow span{white-space:nowrap}
 .title{margin:18px 0 0;font-size:clamp(46px,8vw,104px);font-weight:600;line-height:.98;letter-spacing:-.02em}
@@ -91,8 +72,8 @@ html.arriving .wrap{opacity:0}
 .by span{padding-left:.26em}
 .lede{margin:18px 0 0;max-width:46ch;font-size:clamp(16px,1.7vw,19px);line-height:1.5;font-style:italic;color:var(--dim)}
 
-.tools{margin-top:clamp(28px,5vh,44px);width:100%;display:flex;align-items:center;justify-content:center;gap:18px}
-.search{position:relative;flex:1;max-width:460px;display:flex;align-items:center;height:54px;padding:0 12px 0 48px;
+.tools{margin-top:clamp(28px,5vh,44px);width:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.search{position:relative;width:100%;max-width:460px;display:flex;align-items:center;height:54px;padding:0 12px 0 48px;
   border:1px solid var(--line2);border-radius:999px;background:rgba(255,255,255,.72);
   -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
   transition:border-color .5s var(--ease),background-color .5s var(--ease),box-shadow .5s var(--ease)}
@@ -104,14 +85,7 @@ html.arriving .wrap{opacity:0}
 .search input::placeholder{color:var(--muted);font-style:italic}
 .search input::-webkit-search-cancel-button{-webkit-appearance:none}
 .search kbd{font:11px var(--mono);color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:3px 10px}
-.count{font:400 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
 
-.cue{margin-top:clamp(32px,6vh,60px);align-self:center;display:inline-flex;align-items:center;gap:14px;
-  color:var(--muted);text-decoration:none;font:400 10.5px var(--mono);letter-spacing:.26em;text-transform:uppercase;transition:color .4s var(--ease)}
-.cue i{position:relative;width:1px;height:38px;background:var(--line2);overflow:hidden}
-.cue i::after{content:"";position:absolute;left:0;top:-40%;width:1px;height:40%;background:var(--text);animation:fall 2.4s var(--ease) infinite}
-@keyframes fall{to{top:100%}}
-.cue:hover{color:var(--text)}
 
 .notice{margin:0 0 18px;padding:12px 18px;border:1px solid rgba(168,101,15,.3);border-radius:14px;background:rgba(232,163,61,.14);
   color:var(--warn);font:12.5px/1.45 var(--mono)}
@@ -120,8 +94,8 @@ html.arriving .wrap{opacity:0}
   font:400 10.5px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
 .section::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
 
-/* apps: separate logos zig-zagging down the page. Details unfold beside a logo
-   on hover, on keyboard focus, or when scrolling brings it to the middle (app.js sets .on). */
+/* apps: separate logos zig-zagging down the page, each with its details always shown beside it.
+   A logo lights up once scrolling has flown it into place (app.js sets .on). */
 /* logos sit about a quarter-screen apart, more than one flight's scroll (app.js), so they arrive one at a time */
 .list{counter-reset:app;display:flex;flex-direction:column;gap:clamp(120px,26vh,260px);padding:36px 0 30vh}
 /* --ac is the app's own colour. On a light page it is pulled toward charcoal: --aci for icons and
@@ -138,7 +112,8 @@ html.arriving .wrap{opacity:0}
    (throw), --ss (spread) and --so (strength): in the middle of the screen a shadow tucks in close
    and crisp, and away from it it spreads and fades, as if leaving the spotlight. The blur is drawn
    once; only transform and opacity change after that, and a blurred shape scaled up reads softer. */
-.orb{position:relative;flex:none;display:grid}
+/* above the card, so a logo flying into place passes over it, never under */
+.orb{position:relative;z-index:1;flex:none;display:grid}
 .panel{position:relative;flex:0 1 auto;min-width:0;max-width:430px}
 .cast{position:absolute;pointer-events:none;will-change:transform,opacity;
   transition:opacity .6s var(--ease),transform .45s var(--ease)}
@@ -151,17 +126,16 @@ html.arriving .wrap{opacity:0}
 /* in flight the shadow travels with the logo frame by frame, so it must not lag behind it */
 .tile.flying .orb .cast{transition:none}
 /* the card's: a soft block just inside its edges, dropped a little further than the logo's, so the
-   card reads as floating just above the surface. It only appears while the card is open. */
+   card reads as floating just above the surface. */
 .cast-card{inset:10px 14px;border-radius:18px;background:#1C1C1F;filter:blur(20px);
-  transform:translate3d(calc(var(--sx,3px) * 1.8),calc(16px + var(--sy,7px) * 1.8),0) scale(var(--ss,1));opacity:0}
-.tile.on .cast-card,.tile:focus-visible .cast-card{opacity:calc(var(--so,.8) * .22)}
+  transform:translate3d(calc(var(--sx,3px) * 1.8),calc(16px + var(--sy,7px) * 1.8),0) scale(var(--ss,1));opacity:calc(var(--so,.8) * .22)}
 .tile.off .cast{display:none}
 
 /* app.js flies each logo into place as its spot scrolls into view; mid-flight it can't be pointed at */
 .tile.flying .ico{pointer-events:none}
 
 /* logos: a clean line icon in a soft tint of its app's colour, inside a lightly tinted glass circle.
-   Open (hover, scroll, focus) it brightens to full colour and one thin ring eases out around it. */
+   Open (in place, or focused) it brightens to full colour and one thin ring eases out around it. */
 .ico{position:relative;flex:none;width:84px;height:84px;border-radius:50%;display:grid;place-items:center;pointer-events:auto;
   color:var(--aci);
   /* lit from above: brightest at the top left, a little shade gathering underneath */
@@ -181,26 +155,13 @@ html.arriving .wrap{opacity:0}
   box-shadow:inset 0 1px 0 #fff,inset 0 -4px 10px rgba(28,28,31,.06),0 0 0 4px color-mix(in srgb,var(--ac) 16%,transparent);scale:1.06}
 .tile.on .ico::before,.tile:focus-visible .ico::before{opacity:1;scale:1}
 
-/* a card: a near-white surface just above the backdrop, edged in the app's colour on the logo's side */
+/* a card: a near-white surface just above the backdrop, edged in the app's colour on the logo's side.
+   Always shown, from the moment the page loads. */
 .info{position:relative;min-width:0;max-width:430px;padding:14px 22px 12px 20px;border-radius:16px;
   background:rgba(255,255,255,.86);border:1px solid rgba(28,28,31,.07);border-left:2px solid var(--aci);
-  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-  /* the wipe's clip reaches 30px past the text, so glyphs and their halo are never cut */
-  opacity:0;clip-path:inset(-30px 100% -30px -30px);translate:-14px 0;pointer-events:none;
-  transition:opacity .4s var(--ease),clip-path .75s var(--ease),translate .75s var(--ease)}
-.tile.flip .info{padding:14px 20px 12px 22px;border-left:1px solid rgba(28,28,31,.07);border-right:2px solid var(--aci);
-  clip-path:inset(-30px -30px -30px 100%);translate:14px 0}
-.tile.on .info,.tile:focus-visible .info{opacity:1;clip-path:inset(-30px);translate:0 0;pointer-events:auto}
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);pointer-events:auto}
+.tile.flip .info{padding:14px 20px 12px 22px;border-left:1px solid rgba(28,28,31,.07);border-right:2px solid var(--aci)}
 .info::before{content:"SYS " counter(app,decimal-leading-zero);display:block;margin-bottom:6px;font:400 10.5px var(--mono);letter-spacing:.22em;color:var(--acd)}
-.tile.on .info::after{content:"";position:absolute;left:0;right:0;top:0;height:100%;pointer-events:none;
-  border-radius:inherit;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--ac) 14%,transparent),transparent);animation:scan .9s var(--ease) 1 forwards}
-/* the sweep fades as it leaves, so nothing of it is left sitting in the clip margin afterwards */
-@keyframes scan{from{transform:translateY(-105%);opacity:1}70%{opacity:1}to{transform:translateY(105%);opacity:0}}
-.info > *{opacity:0;translate:0 8px;transition:opacity .5s var(--ease),translate .6s var(--ease)}
-.tile.on .info > *,.tile:focus-visible .info > *{opacity:1;translate:0 0}
-.tile.on .info > :nth-child(2),.tile:focus-visible .info > :nth-child(2){transition-delay:.06s}
-.tile.on .info > :nth-child(3),.tile:focus-visible .info > :nth-child(3){transition-delay:.12s}
-.tile.on .info > :nth-child(4),.tile:focus-visible .info > :nth-child(4){transition-delay:.18s}
 
 .name{margin:0;font-size:clamp(22px,2.6vw,28px);font-weight:600;line-height:1.1;letter-spacing:-.01em}
 .tag{margin:6px 0 0;font:400 10.5px var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--acd)}
@@ -208,7 +169,6 @@ html.arriving .wrap{opacity:0}
 .meta{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:18px;
   font:400 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .tile.flip .meta{flex-direction:row-reverse}
-.as{flex:none;padding:3px 9px;border:1px solid var(--line2);border-radius:999px;font-size:9.5px;letter-spacing:.16em;color:var(--dim)}
 .status{display:inline-flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .label{overflow:hidden;text-overflow:ellipsis}
 .dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--faint)}
@@ -225,39 +185,14 @@ html.arriving .wrap{opacity:0}
 
 .empty{margin:28px 0 0;text-align:center;font-style:italic;color:var(--muted)}
 
-.who{margin-left:16px}
-.who a{margin-left:14px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
-.who a:hover{color:var(--text)}
-.who button{margin-left:10px;padding:0;border:0;background:none;cursor:pointer;color:var(--muted);
-  font:inherit;letter-spacing:inherit;text-transform:inherit;text-decoration:underline;text-underline-offset:3px}
-.who button:hover{color:var(--text)}
 .foot{position:relative;z-index:2;padding:22px calc(18px + var(--safe-r)) calc(22px + var(--safe-b)) calc(18px + var(--safe-l));
   text-align:center;font:400 10.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
-
-/* iOS has no install prompt; this sheet explains Add to Home Screen */
-.sheet{position:fixed;left:12px;right:12px;bottom:calc(12px + var(--safe-b));z-index:10;margin:0 auto;max-width:420px;
-  padding:20px 20px 16px;border:1px solid var(--line2);border-radius:22px;background:rgba(255,255,255,.94);
-  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 24px 60px -12px rgba(28,28,31,.28)}
-.sheet h2{margin:0;font-size:19px;font-weight:600}
-.sheet p{margin:8px 0 0;color:var(--dim);font-size:14px;line-height:1.55}
-.sheet button{margin-top:16px;width:100%;min-height:46px;border:0;border-radius:999px;background:var(--text);color:#fff;
-  font:500 11.5px var(--mono);letter-spacing:.18em;text-transform:uppercase;cursor:pointer}
-/* a user changing their own access word: the same sheet, with fields */
-.sheet label{display:block;margin-top:14px;font:400 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
-.sheet input{display:block;width:100%;margin-top:6px;height:46px;padding:0 14px;border:1px solid var(--line2);border-radius:12px;
-  background:#fff;color:var(--text);font:15px var(--mono);outline:0}
-.sheet input:focus{border-color:rgba(168,125,28,.6);box-shadow:0 0 0 4px rgba(232,185,74,.18)}
-.sheet .msg{min-height:18px;margin:12px 0 0;font:400 12px/1.5 var(--mono);color:var(--warn)}
-.sheet .msg[data-ok]{color:var(--ok)}
-.sheet button.quiet{margin-top:8px;background:none;color:var(--muted);border:1px solid var(--line2)}
-.sheet button[disabled]{opacity:.55;cursor:default}
 
 /* phones: logos hug the edges, details take the rest of the line */
 @media (max-width:640px){
   .hero{min-height:88svh}
-  .tools{flex-wrap:wrap}
-  .search{max-width:none;flex-basis:100%}
-  .search kbd,.count{display:none}
+  .search{max-width:none}
+  .search kbd{display:none}
   .list{gap:22vh}
   .tile{padding:0 4px;gap:28px}
   .ico{width:66px;height:66px}
@@ -273,9 +208,8 @@ html.arriving .wrap{opacity:0}
 @media (pointer:coarse){ .search kbd{display:none} }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .cue i::after,.status[data-s="checking"] .dot,.ico{animation:none}
-  .wrap{transition-duration:.2s}
-  .tile,.ico,.info,.info > *,.cast{transition:opacity .2s}
+  .status[data-s="checking"] .dot,.ico{animation:none}
+  .tile,.ico,.cast{transition:opacity .2s}
   .tile.on .ico{scale:1}
 }
 </style>
@@ -296,11 +230,7 @@ html.arriving .wrap{opacity:0}
         <input id="q" type="search" placeholder="Search apps" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Search apps">
         <kbd>/</kbd>
       </label>
-      <span class="count" id="count"></span>
-      <button class="install" id="install" type="button" hidden>Install app</button>
     </div>
-
-    <a class="cue" href="#apps"><i></i>Scroll to explore</a>
   </section>
 
   <p class="notice" id="offline" hidden>You're offline — apps need a connection to open.</p>
@@ -309,37 +239,8 @@ html.arriving .wrap{opacity:0}
   <p class="empty" id="empty" hidden></p>
 </main>
 
-<footer class="foot">Bookends Pvt Ltd · Surat &amp; Ahmedabad<span class="who" id="who" hidden></span></footer>
+<footer class="foot">Bookends Pvt Ltd · Surat &amp; Ahmedabad</footer>
 
-<form class="sheet" id="wordSheet" role="dialog" aria-modal="true" aria-labelledby="wordTitle" autocomplete="off" hidden>
-  <h2 id="wordTitle">Change your access word</h2>
-  <p>Your old word stops working as soon as you save. You stay signed in here; anywhere else, sign in with the new one.</p>
-  <label for="wordNow" id="wordNowLabel">Your word now</label>
-  <input id="wordNow" type="password" autocomplete="current-password" required>
-  <label for="wordNew">New word</label>
-  <input id="wordNew" type="password" autocomplete="new-password" required>
-  <label for="wordAgain">New word again</label>
-  <input id="wordAgain" type="password" autocomplete="new-password" required>
-  <p class="msg" id="wordMsg" role="status" aria-live="polite"></p>
-  <button type="submit" id="wordSave">Save new word</button>
-  <button type="button" class="quiet" id="wordCancel">Cancel</button>
-</form>
-
-<div class="sheet" id="iosSheet" role="dialog" aria-labelledby="iosTitle" hidden>
-  <h2 id="iosTitle">Add to Home Screen</h2>
-  <p>In Safari, tap the <b>Share</b> button, then <b>Add to Home Screen</b>. The dashboard then opens like an app.</p>
-  <button type="button" id="iosClose">Got it</button>
-</div>
-
-<script>
-  // Two frames guarantee the page has actually been painted; then a short beat, and the page
-  // content comes up.
-  if (document.documentElement.classList.contains('arriving')) {
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      setTimeout(() => document.documentElement.classList.remove('arriving'), 220);
-    }));
-  }
-</script>
 <script src="apps.js"></script>
 <script src="app.js"></script>
 </body>

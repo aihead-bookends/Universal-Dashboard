@@ -6,7 +6,7 @@
  *
  * Bump VERSION whenever SHELL changes.
  */
-const VERSION = 'unisis-v31';
+const VERSION = 'unisis-v37';
 const SHELL = [
   './', 'index.html', 'app.js', 'apps.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-mask.svg', 'icons/icon-180.png', 'icons/icon-192.png',
@@ -37,13 +37,11 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Sign-in calls, the login page and opening an app (a one-time pass) always go to the network.
-  if (/\/(api|login|open)\b/.test(url.pathname)) return;
   if (url.origin === self.location.origin) {
     // Network first, so an edited apps.js shows on the next load; cache only as the offline fallback.
     e.respondWith(
       fetch(req)
-        // A redirected answer is the sign-in gate, not the file asked for: never keep that.
+        // A redirected answer is not the file asked for: never keep that.
         .then((res) => (res.ok && !res.redirected ? store(req, res) : res))
         .catch(() => caches.match(req, { ignoreSearch: true })
           .then((hit) => hit || (req.mode === 'navigate' ? caches.match('./') : Response.error()))),
