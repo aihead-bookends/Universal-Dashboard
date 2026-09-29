@@ -66,80 +66,9 @@ updates every installed copy, so you never need to rebuild the APK to add an app
 (CLI alternative: `npx @bubblewrap/cli init --manifest https://<url>/manifest.webmanifest`.
 It downloads its own JDK and Android SDK on first run.)
 
-## Sign in
+## Open to everyone
 
-Nobody sees the dashboard, the app list or the scripts without signing in, with Google
-or with a name and password. Either way it sets a cookie that lasts 30 days, and the
-login page offers whichever of the two is set up.
-
-Both pages share one light studio backdrop: a seamless sweep from white at the top centre to
-soft grey at the edges, painted once in plain CSS on a fixed layer — no canvas, no animation — so
-it loads instantly and costs nothing while the dashboard scrolls. Each app logo sits on it with a
-soft grey shadow from a single overhead light, and its card floats above the same surface; the
-shadows tighten as a logo reaches the middle of the screen and spread and fade away from it. The sign-in sits against it on the left.
-Signing in clears the form, and the dashboard is prerendered in the background first so the
-navigation is a swap rather than a load.
-
-Add the first account, then start the server:
-
-```
-npm run user add krish        # asks for the password, twice is fine to re-set it
-npm start
-```
-
-| Command | What it does |
-| --- | --- |
-| `npm run user add <name>` | add an account, or change its password |
-| `npm run user list` | who has an account |
-| `npm run user remove <name>` | take an account away |
-| `npm run user export` | accounts on one line, to paste into the host |
-
-Passwords are never stored. `users.json` keeps a random salt and a PBKDF2-SHA256 hash
-(120,000 rounds) per account, and `.session-secret` signs the cookies. Both are
-git-ignored: keep them off GitHub and out of screenshots. Deleting `.session-secret`
-signs everyone out. Ten wrong tries from one address in five minutes stops the rest.
-
-### Google sign-in
-
-People sign in with their Google account, and only the addresses you allow get in.
-Set it up once:
-
-1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), create
-   an **OAuth client ID** of type **Web application**.
-2. Under **Authorised JavaScript origins** add every address the dashboard is opened
-   from, e.g. `http://localhost:4000` and your hosted `https://...` address.
-3. Point the dashboard at it, and say who may come in:
-
-```
-npm run user google 1234-abc.apps.googleusercontent.com
-npm run user allow krish@bookends.co.in     # one address
-npm run user allow @bookends.co.in          # or everyone at a domain
-npm run user config                         # what is set right now
-```
-
-Google only allows sign-in from `localhost` or an HTTPS address, so a phone opening
-`http://172.16.x.x:4000` over the office Wi-Fi cannot use it. Keep a password account
-for that, or reach the dashboard over HTTPS.
-
-The ID token from Google is checked against the signing keys Google publishes, that it
-was minted for this dashboard, that it has not expired and that the address is
-verified, and then against the allow list. Settings live in `auth.config.json`.
-
-### Hosted (Cloudflare Pages)
-
-`functions/` holds the same gate for the hosted copy, using the same hashes and cookie,
-so one `users.json` covers both. On the Pages project, under Settings ->
-Environment variables, set:
-
-| Name | Value |
-| --- | --- |
-| `UNISIS_SECRET` | a long random string; changing it signs everyone out |
-| `UNISIS_USERS` | password accounts: the one line printed by `npm run user export` |
-| `UNISIS_GOOGLE_CLIENT_ID` | Google sign-in: the same client id |
-| `UNISIS_ALLOWED` | who may sign in with Google: `a@b.com,@a-domain.com` |
-
-Netlify and plain static hosts cannot run these functions. Use their own password
-protection there, or host on Pages.
+There is no sign-in. Anyone who can reach the dashboard sees every app in `apps.js`.
 
 ## Host it
 

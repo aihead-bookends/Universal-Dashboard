@@ -59,7 +59,7 @@
     tile.style.setProperty('--i', i);
     if (/^#[0-9a-f]{3,8}$/i.test(app.accent || '')) tile.style.setProperty('--ac', app.accent);
 
-    // Closed, a tile is just its logo; .info (name, description, status) unfolds beside it.
+    // A tile is its logo with .info (name, description, status) always shown beside it.
     const ico = make('span', 'ico');
     ico.innerHTML = iconSvg(app.icon);
     const info = make('div', 'info');
@@ -79,13 +79,9 @@
     const status = make('span', 'status');
     status.append(make('span', 'dot'), make('span', 'label'));
     meta.append(status);
-    // Which of the app's two accounts it opens as for this person, when that has been decided.
-    if (app.as === 'reader' || app.as === 'writer') meta.append(make('span', 'as', app.as === 'writer' ? 'Writer' : 'Reader'));
 
     if (href) {
-      // An app given as reader or writer opens through the dashboard, which checks the level and,
-      // where the app can take one, hands it a sign-in pass for that account.
-      tile.href = app.as ? `open/${encodeURIComponent(app.id)}` : href;
+      tile.href = href;
       tile.target = '_blank';
       tile.rel = 'noopener';
       tile.setAttribute('aria-label', `Open ${app.name}`);
@@ -205,7 +201,6 @@
     light(slots, H);
     // At the foot of the page nothing can scroll higher, so every logo on screen finishes its flight.
     const atBottom = scrollY >= document.documentElement.scrollHeight - H - 2;
-    let justLanded = false;
     flights.forEach((f, i) => {
       const slot = slots[i];
       if (!slot) return;
@@ -214,17 +209,19 @@
       const target = still || (atBottom && slot[1] < H) ? 1 : Math.min(1, Math.max(0, (H * 0.96 - slot[1]) / (H * 0.24)));
       f.shown += (target - f.shown) * glide;
       const st = f.orb.style;
+      // A logo in place lights up (.on), and dims again when it flies off.
       if (target === 1 && f.shown > 0.995) { // by here the flight is within a fraction of a pixel of home
         if (!f.landed) {
           ['--ex', '--ey', '--es', '--eo'].forEach((name) => st.removeProperty(name));
           f.tile.classList.remove('flying');
+          f.tile.classList.add('on');
           f.landed = true;
-          justLanded = true;
         }
         return;
       }
       if (f.landed) {
         f.tile.classList.add('flying');
+        f.tile.classList.remove('on');
         f.landed = false;
       }
       const p = f.shown;
@@ -242,60 +239,10 @@
       st.setProperty('--es', (0.18 + 0.82 * e).toFixed(3));
       st.setProperty('--eo', Math.min(1, p / 0.3).toFixed(3));
     });
-    // A logo that lands in the middle of the screen opens, as if the scroll had just brought it there.
-    if (justLanded) focusMiddle();
     requestAnimationFrame(fly);
   }
   flights.forEach((f) => f.tile.classList.add('flying'));
   requestAnimationFrame(fly);
-
-  /* -------------------------------------------------- details on demand */
-  // One app shows its details at a time: the one under the mouse, or the one a
-  // scroll brings to the middle of the screen. Moving the mouse off folds it
-  // back to its logo. Keyboard focus opens a tile through CSS.
-  let active = null;
-  let leaveTimer = 0;
-  function setActive(tile) {
-    if (tile === active) return;
-    active?.classList.remove('on');
-    active = tile;
-    active?.classList.add('on');
-  }
-  tiles.forEach(({ tile }) => {
-    tile.addEventListener('pointerenter', (e) => {
-      if (e.pointerType !== 'mouse' || !landed(tile)) return;
-      clearTimeout(leaveTimer);
-      setActive(tile);
-    });
-    // A short grace period lets the mouse cross the gap from logo to details.
-    tile.addEventListener('pointerleave', (e) => {
-      if (e.pointerType !== 'mouse') return;
-      leaveTimer = setTimeout(() => { if (active === tile) setActive(null); }, 160);
-    });
-  });
-
-  let scrollQueued = false;
-  function focusMiddle() {
-    scrollQueued = false;
-    const mid = innerHeight / 2;
-    let best = null;
-    let bestGap = innerHeight * 0.18;
-    tiles.forEach(({ tile }) => {
-      if (tile.hidden || !landed(tile)) return;
-      const r = tile.firstChild.getBoundingClientRect();
-      const gap = Math.abs(r.top + r.height / 2 - mid);
-      if (gap < bestGap) {
-        best = tile;
-        bestGap = gap;
-      }
-    });
-    setActive(best);
-  }
-  addEventListener('scroll', () => {
-    if (scrollQueued) return;
-    scrollQueued = true;
-    requestAnimationFrame(focusMiddle);
-  }, { passive: true });
 
   /* ------------------------------------------------------------ search */
   const q = $('#q');
@@ -315,7 +262,6 @@
       t.tile.style.setProperty('--o', `${[0, 10, 4, 14][shown % 4]}%`);
       shown++;
     });
-    if (active?.hidden) setActive(null);
     const live = tiles.filter((t) => t.href).length;
     count.textContent = term ? `${shown} of ${total} apps` : `${live} of ${total} connected`;
     empty.hidden = shown > 0;
@@ -363,92 +309,6 @@
   });
   syncOnline();
   probeAll();
-
-  /* --------------------------------------------------------- account */
-  // The server only serves this page to a signed-in session; this just names them and offers a way out.
-  // Hosted without the sign-in functions there is no api/me, so the footer stays as it is.
-  (async () => {
-    const who = $("#who");
-    try {
-      const res = await fetch("api/me", { headers: { Accept: "application/json" } });
-      if (!res.ok) return;
-      const { name, role, changeWord, hasWord } = await res.json();
-      who.append(role === "superadmin" ? `Signed in as ${name} (superadmin)` : `Signed in as ${name}`);
-      if (role === "superadmin") {
-        const manage = make("a", "", "Access");
-        manage.href = "admin";
-        who.append(manage);
-      }
-      if (changeWord) who.append(wordChanger(hasWord));
-      const out = make("button", "", "Sign out");
-      out.type = "button";
-      out.addEventListener("click", async () => {
-        await fetch("api/logout", { method: "POST" });
-        location.replace("login");
-      });
-      who.append(out);
-      who.hidden = false;
-    } catch { /* no sign-in behind this copy of the dashboard */ }
-  })();
-
-  // A user's own access word: a button beside Sign out opens a sheet asking for the word they have
-  // now and the new one twice. The server checks the old word, and keeps the new one where a
-  // superadmin can see it; this device stays signed in.
-  function wordChanger(hasWord) {
-    const sheet = $("#wordSheet");
-    const msg = $("#wordMsg");
-    const save = $("#wordSave");
-    const fields = ["#wordNow", "#wordNew", "#wordAgain"].map((s) => $(s));
-    const open = make("button", "", "Change word");
-    open.type = "button";
-    if (!hasWord) {
-      // From before words: they prove it is them with their password, and choose a word to use instead.
-      $("#wordNowLabel").textContent = "Your password now";
-      open.textContent = "Choose a word";
-    }
-    const say = (text, ok = false) => {
-      msg.textContent = text;
-      msg.toggleAttribute("data-ok", ok);
-    };
-    const close = () => {
-      sheet.hidden = true;
-      fields.forEach((f) => { f.value = ""; });
-      say("");
-      open.focus();
-    };
-    open.addEventListener("click", () => {
-      sheet.hidden = false;
-      fields[0].focus();
-    });
-    $("#wordCancel").addEventListener("click", close);
-    sheet.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
-    sheet.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const [now, next, again] = fields.map((f) => f.value);
-      if (next !== again) { say("The two new words are not the same."); fields[2].select(); return; }
-      save.disabled = true;
-      say("Saving…");
-      try {
-        const res = await fetch("api/me/word", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ current: now, next }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) { say(data.error || "That did not work. Try again."); return; }
-        fields.forEach((f) => { f.value = ""; });
-        say("Done. Use your new word next time you sign in.", true);
-        $("#wordNowLabel").textContent = "Your word now";
-        open.textContent = "Change word";
-        setTimeout(() => { if (!sheet.hidden) close(); }, 2200);
-      } catch {
-        say("The dashboard is not answering. Try again.");
-      } finally {
-        save.disabled = false;
-      }
-    });
-    return open;
-  }
 
   /* ----------------------------------------------------------- install */
   const installBtn = $('#install');
