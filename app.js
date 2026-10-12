@@ -135,20 +135,11 @@
   async function reach(url, ms) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), ms);
-    const opts = { cache: 'no-store', signal: ctrl.signal };
     try {
-      await fetch(url.origin + '/', { ...opts, mode: 'no-cors' });
+      await fetch(url.origin + '/', { mode: 'no-cors', cache: 'no-store', signal: ctrl.signal });
       return true;
     } catch {
-      // A site sending Cross-Origin-Resource-Policy: same-site (Bookends Cleaning) blocks
-      // no-cors reads from here; if it also allows CORS, a cors request still gets through.
-      if (ctrl.signal.aborted) return false;
-      try {
-        await fetch(url.origin + '/', { ...opts, mode: 'cors' });
-        return true;
-      } catch {
-        return false;
-      }
+      return false;
     } finally {
       clearTimeout(timer);
     }
