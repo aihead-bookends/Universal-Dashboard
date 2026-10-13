@@ -36,6 +36,8 @@
     spark: '<path d="M10 4.5l1.6 4.4 4.4 1.6-4.4 1.6L10 16.5l-1.6-4.4-4.4-1.6 4.4-1.6z"/><path d="M17 14l.8 2.2 2.2.8-2.2.8L17 20l-.8-2.2-2.2-.8 2.2-.8z"/>',
     // Compliance: a shield with a tick, a unit that passes inspection.
     shield: '<path d="M12 4.5l6.5 2.5v4.6c0 4-2.7 6.9-6.5 7.9-3.8-1-6.5-3.9-6.5-7.9V7z"/><path d="M9.2 12.2l2 2 3.8-4"/>',
+    // Cookbook: an open book, the brand story of the four houses.
+    book: '<path d="M12 7.5c-1.8-1.3-4.2-2-7-2v11c2.8 0 5.2.7 7 2 1.8-1.3 4.2-2 7-2v-11c-2.8 0-5.2.7-7 2z"/><path d="M12 7.5v11"/>',
     // Anything unknown: four modules on the grid.
     grid: '<rect x="4.5" y="4.5" width="6" height="6" rx="1.5"/><rect x="13.5" y="4.5" width="6" height="6" rx="1.5"/><rect x="4.5" y="13.5" width="6" height="6" rx="1.5"/><rect x="13.5" y="13.5" width="6" height="6" rx="1.5"/>',
   };
