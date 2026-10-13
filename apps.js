@@ -7,7 +7,7 @@
  *   name    the app's name
  *   tag     two or three words on what it is, shown above the description
  *   desc    the system line: what the app runs, in one sentence
- *   icon    cube | lens | rotate | tally | lock | send | cat | chart | badge | spark | shield | grid
+ *   icon    cube | lens | rotate | tally | lock | send | cat | chart | badge | spark | shield | book | grid
  *   accent  logo colour (hex); keep it bright, the logos sit on a near-black background
  *   url     where OPEN goes. Either a full address, or a template where {host}
  *           is replaced by the machine the dashboard was opened from — so
@@ -50,4 +50,7 @@ window.UNISIS_APPS = [
   { id: 'compliance', name: 'Compliance', tag: 'Food safety & upkeep',
     desc: 'Compliance Tracking System — shows where each unit stands on food safety and maintenance, where it has to be, and what to fix first.',
     icon: 'shield', accent: '#7CE38B', url: 'https://bookends-compliance-murex.vercel.app/' },
+  { id: 'cookbook',   name: 'Cookbook',   tag: 'Brand book',
+    desc: 'Brand Cookbook — how Bookends and its four houses, Capiche, Aiko, Beshak and Ghaslet, look, sound and tell their story.',
+    icon: 'book',   accent: '#F2A9C8', url: 'https://cookbook-five-lemon.vercel.app/' },
 ];
